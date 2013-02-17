@@ -1,0 +1,33 @@
+# -*- Makefile -*-
+
+include ../Makefile.$(ARCHITECTURE_LOWER_CASE).common
+
+SOURCES_MAIN		= ${wildcard *.cpp}
+OBJECTS_MAIN		= ${addprefix $(VAR_PATH)/skk/,$(SOURCES_MAIN:.cpp=.o)}
+
+SOURCES_ARCHITECTURE	= ${wildcard architecture/$(ARCHITECTURE_LOWER_CASE)/*.cpp}
+OBJECTS_ARCHITECTURE	= ${addprefix $(VAR_PATH)/skk/,$(SOURCES_ARCHITECTURE:.cpp=.o)}
+
+SOURCES			= $(SOURCES_ARCHITECTURE) $(SOURCES_MAIN)
+OBJECTS			= $(OBJECTS_ARCHITECTURE) $(OBJECTS_MAIN)
+
+DEPEND_FILE		= $(VAR_PATH)/depend.skk
+
+.SUFFIXES		:
+.PHONY			: all clean run makerun break makebreak kill makekill debugger vlist vhist vreport test depend cleandepend
+
+all			: $(OBJECTS)
+
+$(DEPEND_FILE)		:
+	$(MAKEDEPEND) $(VAR_PATH)/skk $(DEPEND_FILE) '$(CXX) $(CXXFLAGS)' '$(CPP) -E -MM $(CPPFLAGS) $(SOURCES)'
+
+depend			:
+	$(MAKEDEPEND) $(VAR_PATH)/skk $(DEPEND_FILE) '$(CXX) $(CXXFLAGS)' '$(CPP) -E -MM $(CPPFLAGS) $(SOURCES)'
+
+cleandepend		:
+	-$(RM) $(DEPEND_FILE)
+
+include $(DEPEND_FILE)
+
+clean			:
+	-$(RM) $(OBJECTS)

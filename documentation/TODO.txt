@@ -1,0 +1,3 @@
+- yaskkserv_make_dictionary のバイトオーダ指定対応。
+
+- ドキュメント整備。

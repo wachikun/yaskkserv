@@ -1,0 +1,96 @@
+# -*- Makefile -*-
+
+.SUFFIXES			:
+.PHONY				: all setup clean install_common_ install install_all install_simple install_normal install_hairy
+
+PREFIX				:= /usr/local
+CXXFLAGS_CONFIG			= -D YASKKSERV_VERSION=\"0.5.3\"
+CXXFLAGS_CONFIG			+= -Os
+# CXXFLAGS_CONFIG			+= -march=native
+CXXFLAGS_CONFIG			+= -D YASKKSERV_ARCHITECTURE_BSD_CYGWIN_LINUX_GCC
+CXXFLAGS_CONFIG			+= -D YASKKSERV_ARCHITECTURE_BYTE_ORDER_VAX
+CXXFLAGS_CONFIG			+= -D YASKKSERV_CONFIG_ENABLE_SYSLOG
+CXXFLAGS_CONFIG			+= -D YASKKSERV_CONFIG_ENABLE_ERROR_MESSAGE
+# CXXFLAGS_CONFIG			+= -D YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
+CXXFLAGS_CONFIG			+= -D YASKKSERV_CONFIG_HEADER_HAVE_ICONV_H
+CXXFLAGS_CONFIG			+= -D YASKKSERV_CONFIG_MACRO_HAVE_SYMBOL_MSG_NOSIGNAL
+
+ARCHITECTURE_LOWER_CASE		:= bsd_cygwin_linux_gcc
+
+INCLUDE_FLAGS			:= -I . -I source/skk -I source/skk/architecture -I source/skk/architecture/$(ARCHITECTURE_LOWER_CASE)
+LIBRARY_FLAGS			:= -L/usr/lib
+CXXFLAGS			:= $(INCLUDE_FLAGS) $(CXXFLAGS_CONFIG)
+LDFLAGS				:= -lm -L/usr/lib
+
+CXX				:= g++
+LD				:= $(CXX)
+RM				:= rm
+CP				:= cp
+MKDIR				:= mkdir
+INSTALL				:= install
+
+SKKLIB_SOURCES			:= ${wildcard source/skk/architecture/$(ARCHITECTURE_LOWER_CASE)/*.cpp}
+SKKLIB_OBJECTS			:= $(SKKLIB_SOURCES:.cpp=.o)
+MAKE_DICTIONARY_SOURCES		:= ${wildcard source/yaskkserv_make_dictionary/*.cpp}
+MAKE_DICTIONARY_OBJECTS		:= $(MAKE_DICTIONARY_SOURCES:.cpp=.o)
+SIMPLE_SOURCES			:= ${wildcard source/yaskkserv_simple/*.cpp}
+SIMPLE_OBJECTS			:= $(SIMPLE_SOURCES:.cpp=.o)
+NORMAL_SOURCES			:= ${wildcard source/yaskkserv_normal/*.cpp}
+NORMAL_OBJECTS			:= $(NORMAL_SOURCES:.cpp=.o)
+HAIRY_SOURCES			:= ${wildcard source/yaskkserv_hairy/*.cpp}
+HAIRY_OBJECTS			:= $(HAIRY_SOURCES:.cpp=.o)
+
+OBJECTS				:= $(SKKLIB_OBJECTS) $(MAKE_DICTIONARY_OBJECTS) $(SIMPLE_OBJECTS) $(NORMAL_OBJECTS) $(HAIRY_OBJECTS)
+
+TARGETS				:= source/yaskkserv_make_dictionary/yaskkserv_make_dictionary source/yaskkserv_simple/yaskkserv_simple source/yaskkserv_normal/yaskkserv_normal source/yaskkserv_hairy/yaskkserv_hairy
+
+all				: setup $(TARGETS)
+
+setup				:
+	$(CP) -v source/skk/architecture/$(ARCHITECTURE_LOWER_CASE)/skk_gcc_precompile.h.in ./skk_gcc_precompile.h
+
+clean				: 
+	-$(RM) $(OBJECTS)
+	-$(RM) $(TARGETS)
+	-$(RM) ./skk_gcc_precompile.h
+
+install_common_			:
+	$(MKDIR) -p $(PREFIX)/bin
+	$(INSTALL) source/yaskkserv_make_dictionary/yaskkserv_make_dictionary $(PREFIX)/bin/yaskkserv_make_dictionary
+
+install				: install_normal
+
+install_all			: install_common_
+	$(MKDIR) -p $(PREFIX)/sbin
+	$(INSTALL) source/yaskkserv_simple/yaskkserv_simple $(PREFIX)/sbin/yaskkserv_simple
+	$(INSTALL) source/yaskkserv_normal/yaskkserv_normal $(PREFIX)/sbin/yaskkserv_normal
+	$(INSTALL) source/yaskkserv_hairy/yaskkserv_hairy $(PREFIX)/sbin/yaskkserv_hairy
+
+install_simple			: install_common_
+	$(MKDIR) -p $(PREFIX)/sbin
+	$(INSTALL) source/yaskkserv_simple/yaskkserv_simple $(PREFIX)/sbin/yaskkserv
+
+install_normal			: install_common_
+	$(MKDIR) -p $(PREFIX)/sbin
+	$(INSTALL) source/yaskkserv_normal/yaskkserv_normal $(PREFIX)/sbin/yaskkserv
+
+install_hairy			: install_common_
+	$(MKDIR) -p $(PREFIX)/sbin
+	$(INSTALL) source/yaskkserv_hairy/yaskkserv_hairy $(PREFIX)/sbin/yaskkserv
+
+source/yaskkserv_make_dictionary/yaskkserv_make_dictionary	: skk $(MAKE_DICTIONARY_OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ ${wordlist 2, 99, $^} $(SKKLIB_OBJECTS)
+
+source/yaskkserv_simple/yaskkserv_simple			: skk $(SIMPLE_OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ ${wordlist 2, 99, $^} $(SKKLIB_OBJECTS)
+
+source/yaskkserv_normal/yaskkserv_normal			: skk $(NORMAL_OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ ${wordlist 2, 99, $^} $(SKKLIB_OBJECTS)
+
+source/yaskkserv_hairy/yaskkserv_hairy				: skk $(HAIRY_OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ ${wordlist 2, 99, $^} $(SKKLIB_OBJECTS)
+
+skk				: $(SKKLIB_OBJECTS)
+
+$(OBJECTS)			: %.o : %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<

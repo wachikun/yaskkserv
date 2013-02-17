@@ -1,0 +1,63 @@
+# -*- Makefile -*-
+
+.SUFFIXES		:
+.PHONY			: all clean run makerun break makebreak kill makekill debugger vlist vhist vreport test precompile depend cleandepend
+
+all			: precompile
+	$(MAKE) -f $(MAKEFILE) -C skk all
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_simple all
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_normal all
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_hairy all
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_make_dictionary all
+	date
+	echo '*** done.'
+
+clean			:
+	$(MAKE) -f $(MAKEFILE) -C skk clean
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_simple clean
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_normal clean
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_hairy clean
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_make_dictionary clean
+	date
+	echo '*** done.'
+
+run			:
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_hairy run
+	date
+	echo '*** done.'
+
+makerun			: all run
+
+ifdef USE_PRECOMPILE
+
+precompile		: $(VAR_PATH)/skk_gcc_precompile.h.gch
+
+$(VAR_PATH)/skk_gcc_precompile.h.gch : $(VAR_PATH)/skk_gcc_precompile.h
+	cd $(VAR_PATH) && $(CXX) skk_gcc_precompile.h
+
+else				# USE_PRECOMPILE
+
+precompile		: $(VAR_PATH)/skk_gcc_precompile.h
+
+endif				# USE_PRECOMPILE
+
+$(VAR_PATH)/skk_gcc_precompile.h : $(PROJECT_ROOT)/source/skk/architecture/$(ARCHITECTURE_LOWER_CASE)/skk_gcc_precompile.h.in
+	cp -p $< $@
+
+depend			: precompile
+	$(MAKE) -f $(MAKEFILE) -C skk depend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_simple depend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_normal depend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_hairy depend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_make_dictionary depend
+	date
+	echo '*** done.'
+
+cleandepend		:
+	$(MAKE) -f $(MAKEFILE) -C skk cleandepend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_simple cleandepend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_normal cleandepend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_hairy cleandepend
+	$(MAKE) -f $(MAKEFILE) -C yaskkserv_make_dictionary cleandepend
+	date
+	echo '*** done.'

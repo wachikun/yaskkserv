@@ -1,0 +1,75 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+die if $#ARGV != 3;
+
+my $var_path = shift(@ARGV);
+my $write_file = shift(@ARGV);
+my $cxx_command_line = shift(@ARGV);
+my $cpp_command_line = shift(@ARGV);
+
+my @data;
+my $data = '';
+my %mkdir;
+my $last_object;
+my $last_source;
+
+{
+        open(my $fh, '-|', $cpp_command_line) or die;
+        my $tmp = '';
+        while (<$fh>) {
+	    chomp;
+	    if (/\\[ \t]*$/) {
+		s/\\+[ \t]*$//;
+		$tmp .= $_;
+	    } else {
+		if ($tmp ne '') {
+		    $_ = "$tmp $_";
+		    $tmp = '';
+		}
+		s/ +/ /g;
+		s/ *: */:/;
+		push(@data, "$_\n");
+	    }
+	}
+}
+
+foreach (@data) {
+    if (m!^([^:]+):([^ ]+)( .+)!) {
+	my $object = $1;
+	my $source = $2;
+	my $object_base = $object;
+	my $source_base = $source;
+
+	my $prefix = "$var_path/";
+	if ($source_base =~ s!^(.+/)!!) {
+	    $prefix .= $1;
+	}
+	$object_base =~ s!\.[^\.]+$!!;
+	$source_base =~ s!\.[^\.]+$!!;
+
+	die if $object_base ne $source_base;
+
+	$data .= $prefix . $_;
+
+	$object = $prefix . $object;
+	$data .= "\t$cxx_command_line -c $source -o $object\n";
+	$data .= "\n\n";
+
+	my $tmp = '';
+	foreach (split(m!/!, $prefix)) {
+	    $tmp .= "$_/";
+	    unless (defined($mkdir{$tmp})) {
+		++$mkdir{$tmp};
+		mkdir($tmp) unless (-d $tmp);
+	    }
+	}
+    } else {
+	die;
+    }
+}
+
+open(my $wfh, '>', $write_file) or die;
+print $wfh $data;

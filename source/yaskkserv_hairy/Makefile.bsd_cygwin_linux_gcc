@@ -1,0 +1,54 @@
+# -*- Makefile -*-
+
+include ../Makefile.$(ARCHITECTURE_LOWER_CASE).common
+
+TARGET_BASE		= yaskkserv_hairy
+
+# RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv
+RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv http://www.google.com
+# RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 http://www.google.com /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv
+# RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 http://www.google.com
+CXXFLAGS		+= $(CXXFLAGS_OPTIMIZE_SERVER_HAIRY) $(CXXFLAGS_WARNING_SERVER_HAIRY)
+
+SOURCES			= ${wildcard *.cpp}
+OBJECTS			= ${addprefix $(VAR_PATH)/$(TARGET_BASE)/,$(SOURCES:.cpp=.o)}
+OBJECTS_SKK		= ${wildcard $(VAR_PATH)/skk/*.o} ${wildcard $(VAR_PATH)/skk/architecture/$(ARCHITECTURE_LOWER_CASE)/*.o}
+
+DEPEND_FILE		= $(VAR_PATH)/depend.$(TARGET_BASE)
+
+TARGET			= $(VAR_PATH)/$(TARGET_BASE)/$(TARGET_BASE)
+
+.SUFFIXES		:
+.PHONY			: all clean run makerun break makebreak kill makekill debugger vlist vhist vreport test depend cleandepend
+
+all			: $(TARGET)
+
+$(TARGET)		: $(OBJECTS_SKK) $(OBJECTS)
+ifeq ($(OSNAME),CYGWIN)
+	$(LD) $(LDFLAGS) -o $@ $^ -liconv
+else				# ($(OSNAME),CYGWIN)
+	$(LD) $(LDFLAGS) -o $@ $^
+endif				# ($(OSNAME),CYGWIN)
+ifndef DEBUG
+	$(STRIP) $@$(EXECUTE_FILE_SUFFIX)
+endif
+
+run			:
+	cd $(PROJECT_ROOT); export SEGFAULT_SIGNALS=all && export LD_PRELOAD=/lib/libSegFault.so && time $(TARGET) $(RUN_FLAGS)
+
+makerun			: all run
+
+$(DEPEND_FILE)		:
+	$(MAKEDEPEND) $(VAR_PATH)/$(TARGET_BASE) $(DEPEND_FILE) '$(CXX) $(CXXFLAGS)' '$(CPP) -E -MM $(CPPFLAGS) $(SOURCES)'
+
+depend			:
+	$(MAKEDEPEND) $(VAR_PATH)/$(TARGET_BASE) $(DEPEND_FILE) '$(CXX) $(CXXFLAGS)' '$(CPP) -E -MM $(CPPFLAGS) $(SOURCES)'
+
+cleandepend		:
+	-$(RM) $(DEPEND_FILE)
+
+include $(DEPEND_FILE)
+
+clean			:
+	-$(RM) $(TARGET) $(TARGET).map
+	-$(RM) $(OBJECTS)

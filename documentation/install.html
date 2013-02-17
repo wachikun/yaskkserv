@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="ja">
+  <head>
+    <title>インストール / yaskkserv</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+    <meta http-equiv="Content-Script-Type" content="text/javascript">
+    <link rel="stylesheet" href="./css/default.css" type="text/css">
+    <link rel="contents" href="/yaskkserv/">
+    <link rev="made" href="mailto:wac@umiushi.org">
+    <link rel="shortcut icon" href="/image/yaskkserv.ico">
+  </head>
+
+  <body>
+
+
+    <div><a name="top">&nbsp;</a></div>
+    <div class="title">
+      インストールについて
+    </div>
+
+
+
+
+    <h1>はじめに</h1>
+
+    <p>
+      このパッケージをビルドすると、以下のプログラム群が作成されます。
+    </p>
+
+    <dl>
+      <dt>yaskkserv_simple
+      <dd>もっともシンプルなサーバ
+      <dt>yaskkserv_normal
+      <dd>一般的なサーバ
+      <dt>yaskkserv_hairy
+      <dd>なんでもありサーバになる予定
+      <dt>yaskkserv_make_dictionary
+      <dd>yaskkserv 用辞書変換ユーティリティ
+    </dl>
+
+
+
+
+    <h1>インストール</h1>
+
+    <p>
+      大抵の環境で、
+    </p>
+
+    <pre class="commandline">
+$ ./configure
+$ make</pre>
+
+    <p>
+      でビルドできます。 configure は Perl スクリプトです。 Perl がない場合は後述の Makefile.noperl を使用します。
+    <p>
+      インストールすると PREFIX/bin にツールが、 PREFIX/sbin にサーバがインストールされます。
+    <p>
+      インストールするバイナリごとに仮想ターゲットを用意しています。
+    </p>
+
+    <pre class="commandline">
+# make install
+# make install_normal
+(ツールとサーバをインストールします。 yaskkserv_normal は yaskkserv という名前でインストールされます。)
+
+# make install_simple
+(ツールとサーバをインストールします。 yaskkserv_simple は yaskkserv という名前でインストールされます。)
+
+# make install_hairy
+(ツールとサーバをインストールします。 yaskkserv_hairy は yaskkserv という名前でインストールされます。)
+
+# make install_all
+(ツールとサーバをインストールします。 yaskkserv_simple, yaskkserv_normal と yaskkserv_hairy はそのままの名前でインストールされます。)</pre>
+
+    <p>
+      Perl が無い場合は Makefile.noperl を手で編集して、
+    </p>
+    <pre class="commandline">
+$ make -f Makefile.noperl</pre>
+
+    <p>
+      でビルドできます。インストールは Perl がある場合と同様で、
+    </p>
+    <pre class="commandline">
+# make -f Makefile.noperl install_all
+(ツールとサーバをインストールします。 yaskkserv_simple, yaskkserv_normal と yaskkserv_hairy はそのままの名前でインストールされます。)</pre>
+    <p>
+      のように実行します。
+    </p>
+
+
+    <h2>注意が必要な点</h2>
+
+    <ul>
+      <li>gcc-3.3 系 + メモリが少ない機械でビルドに失敗することがある
+      <li>gcc は 3.3 以上が必要 (おすすめは 4 系)
+      <li>ビルドには Perl が必要
+    </ul>
+
+    <p>
+      gcc-3.3 系 + メモリが少ない機械ではコンパイラのバグを踏んでビルドに失敗することがあります。 gcc-4 系を使うか、メモリの多い機械でビルドする必要があります。作者の環境ではメモリが 256M の機械ではビルドに失敗、 512M の機械では成功します。
+    </p>
+
+
+
+
+    <h2>configure オプション</h2>
+
+    <dl>
+      <dt>--gplusplus=G++
+      <dd>g++ の実行ファイルを指定します。特定バージョンの g++ を使う場合に便利です。
+      <dt>--help
+      <dd>使用法を表示します。
+      <dt>--enable-google-japanese-input
+      <dd>yaskkserv_hairy の google japanese input を有効にします。
+      <dt>--enable-syslog
+      <dd>syslog 出力を有効にします。 (デフォルト)
+      <dt>--disable-error-message
+      <dd>syslog 出力を無効にします。
+      <dt>--enable-error-message
+      <dd>エラーメッセージ出力を有効にします。 (デフォルト)
+      <dt>--disable-error-message
+      <dd>エラーメッセージ出力を無効にします。ヘルプメッセージ等も表示されなくなるので注意が必要です。
+      <dt>--precompile
+      <dd>プリコンパイルヘッダを使用します。
+      <dt>--prefix=PREFIX
+      <dd>インストールディレクトリを指定します。
+    </dl>
+
+
+
+
+    <h1>つかいかた</h1>
+
+    <p>
+      まず yaskkserv_make_dictionary で専用の辞書を作成する必要があります。
+    </p>
+
+    <pre class="commandline">
+$ yaskkserv_make_dictionary SKK-JISYO.L SKK-JISYO.L.yaskkserv</pre>
+
+
+    <p>
+      以上の操作で SKK-JISYO.L から SKK-JISYO.L.yaskkserv が作られます。
+    <p>
+      作成した辞書を指定してサーバを起動します。
+    </p>
+
+    <pre class="commandline">
+$ yaskkserv SKK-JISYO.L.yaskkserv</pre>
+
+
+    <p>
+      google japanese input を有効にした場合、 yaskkserv_hairy では、辞書に「http://www.google.com」を指定できます。
+    </p>
+
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=dictionary http://www.google.com</pre>
+
+    <p>
+      詳細は<a href="http://umiushi.org/~wac/yaskkserv/">配布サイト</a>で解説しています。
+    </p>
+
+
+    <hr>
+
+
+    <p>
+      <a href="index.html">戻る</a>
+    </p>
+
+
+  </body>
+</html>

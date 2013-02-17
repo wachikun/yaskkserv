@@ -1,0 +1,111 @@
+body
+{
+	color: rgb(0, 0, 64);
+	background-color: rgb(255, 248, 232);
+}
+
+
+
+
+address
+{
+	text-align: right;
+}
+
+
+
+
+strong
+{
+	background-color: rgb(0, 0, 0);
+}
+
+
+
+
+h1
+{
+	color: rgb(128, 64, 16);
+
+	border-bottom: 3px solid rgb(128, 64, 16);
+}
+
+
+h1.space
+{
+	margin-top: 2em;
+}
+
+
+
+
+h2
+{
+	color: rgb(128, 64, 16);
+
+	border-bottom: 3px solid rgb(128, 64, 16);
+}
+
+
+
+
+pre.commandline
+{
+	font-family: monospace;
+	white-space: pre;
+	border: none;
+	padding: 4px;
+	color: rgb(32, 32, 32);
+	background-image: none;
+	background-color: rgb(204, 192, 160);
+}
+
+
+pre.source
+{
+	font-family: monospace;
+	white-space: pre;
+	border: none;
+	padding: 4px;
+	color: rgb(204, 204, 204);
+	background-image: none;
+	background-color: rgb(102, 102, 102);
+}
+
+
+pre.log
+{
+	font-family: monospace;
+	white-space: pre;
+	border: none;
+	padding: 4px;
+	color: rgb(204, 204, 204);
+	background-image: none;
+	background-color: rgb(102, 102, 102);
+}
+
+
+
+
+div.center
+{
+	text-align: center;
+}
+
+
+div.right
+{
+	text-align: right;
+}
+
+
+div.title
+{
+	font-family: Arial,sans-serif;
+	font-weight: bold;
+
+	text-align: center;
+	font-size: large;
+	margin-top: 2em;
+	margin-bottom: 2em;
+}
