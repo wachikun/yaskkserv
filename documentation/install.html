@@ -113,7 +113,13 @@ $ make -f Makefile.noperl</pre>
       <dt>--help
       <dd>使用法を表示します。
       <dt>--enable-google-japanese-input
-      <dd>yaskkserv_hairy の google japanese input を有効にします。
+      <dd>yaskkserv_hairy の google japanese input を有効にします。(デフォルト)
+      <dt>--disable-google-japanese-input
+      <dd>yaskkserv_hairy の google japanese input を無効にします。
+      <dt>--enable-google-suggest
+      <dd>yaskkserv_hairy の google suggest を有効にします。
+      <dt>--disable-google-suggest
+      <dd>yaskkserv_hairy の google suggest を無効にします。(デフォルト)
       <dt>--enable-syslog
       <dd>syslog 出力を有効にします。 (デフォルト)
       <dt>--disable-error-message
@@ -151,13 +157,67 @@ $ yaskkserv_make_dictionary SKK-JISYO.L SKK-JISYO.L.yaskkserv</pre>
 $ yaskkserv SKK-JISYO.L.yaskkserv</pre>
 
 
+
+
+    <h2>google japanese input を辞書として使う</h2>
+
     <p>
-      google japanese input を有効にした場合、 yaskkserv_hairy では、辞書に「http://www.google.com」を指定できます。
+      google japanese input を有効にして --google-japanese-input=dictionary オプションを指定した場合、 yaskkserv_hairy では、辞書に「https://www.google.com」を指定できます。 https ではなく「http://www.google.com」を指定した場合は http でアクセスします。
     </p>
 
     <pre class="commandline">
-$ yaskkserv --google-japanese-input=dictionary http://www.google.com</pre>
+$ yaskkserv --google-japanese-input=dictionary https://www.google.com</pre>
 
+    <p>
+      同様に google suggest を有効にした場合、辞書に「https://suggest.google.com」を指定できます。
+    </p>
+
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=dictionary https://suggest.google.com</pre>
+
+    <p>
+      辞書は複数指定できます。
+    </p>
+
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=dictionary LOCALDIC https://suggest.google.com https://www.google.com</pre>
+
+    <p>
+      google への問い合わせは --google-cache オプションでキャッシュすることも可能ですが、応答時間の違いから過去に変換した文字列を推測される恐れがあります。
+    </p>
+
+
+    <h2>ローカル辞書に見付からなかったときのみ google にアクセスする</h2>
+
+    <p>
+      --google-japanese-input=notfound オプションを指定すると、辞書に候補が見付からなかったときにだけ google japanese input を検索します。以下のような組み合わせが可能です。
+
+    <p>
+      辞書に候補が見付からなければ google japanese input に https でアクセス。
+    </p>
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=notfound LOCALDIC</pre>
+
+    <p>
+      辞書に候補が見付からなければ google suggest に https でアクセス。
+    </p>
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=notfound --google-suggest LOCALDIC</pre>
+
+    <p>
+      辞書に候補が見付からなければ google suggest の次に google japanese input に https でアクセス。
+    </p>
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=notfound-suggest-input --google-suggest LOCALDIC</pre>
+
+    <p>
+      辞書に候補が見付からなければ google japanese input の次に google suggest に https でアクセス。
+    </p>
+    <pre class="commandline">
+$ yaskkserv --google-japanese-input=notfound-input-suggest --google-suggest LOCALDIC</pre>
+
+    <p>
+      --use-http オプションを付けることで https ではなく http でアクセスできます。
     <p>
       詳細は<a href="http://umiushi.org/~wac/yaskkserv/">配布サイト</a>で解説しています。
     </p>

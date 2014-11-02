@@ -5,7 +5,11 @@ include ../Makefile.$(ARCHITECTURE_LOWER_CASE).common
 TARGET_BASE		= yaskkserv_hairy
 
 # RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv
-RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv http://www.google.com
+# RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-suggest --google-japanese-input-timeout=1.1 /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv https://suggest.google.com https://www.google.com
+# RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-suggest --google-japanese-input-timeout=1.1 --google-cache=512 --google-cache-file=/tmp/yaskkserv.cache /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv https://www.google.com https://suggest.google.com
+RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 --google-cache=512 --google-cache-file=/tmp/yaskkserv.cache /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv https://www.google.com
+# RUN_FLAGS		= --port=9999 /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv
+# RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-suggest --google-japanese-input-timeout=1.1 https://www.google.com
 # RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 http://www.google.com /home/wac/local/share/skk/SKK-JISYO.total+zipcode.yaskkserv
 # RUN_FLAGS		= --port=9999 --google-japanese-input=dictionary --google-japanese-input-timeout=1.1 http://www.google.com
 CXXFLAGS		+= $(CXXFLAGS_OPTIMIZE_SERVER_HAIRY) $(CXXFLAGS_WARNING_SERVER_HAIRY)
@@ -24,11 +28,7 @@ TARGET			= $(VAR_PATH)/$(TARGET_BASE)/$(TARGET_BASE)
 all			: $(TARGET)
 
 $(TARGET)		: $(OBJECTS_SKK) $(OBJECTS)
-ifeq ($(OSNAME),CYGWIN)
-	$(LD) $(LDFLAGS) -o $@ $^ -liconv
-else				# ($(OSNAME),CYGWIN)
-	$(LD) $(LDFLAGS) -o $@ $^
-endif				# ($(OSNAME),CYGWIN)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDFLAGS_LIBRARY_HAIRY)
 ifndef DEBUG
 	$(STRIP) $@$(EXECUTE_FILE_SUFFIX)
 endif

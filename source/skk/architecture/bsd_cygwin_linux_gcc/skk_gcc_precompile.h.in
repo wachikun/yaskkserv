@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -47,6 +47,11 @@
 #include <time.h>
 #include <signal.h>
 
+// pthread
+#ifdef YASKKSERV_CONFIG_HAVE_PTHREAD
+#include <pthread.h>
+#endif  // YASKKSERV_CONFIG_HAVE_PTHREAD
+
 // Socket
 #include <sys/socket.h>
 #include <netdb.h>
@@ -55,6 +60,22 @@
 
 #ifdef YASKKSERV_CONFIG_HEADER_HAVE_ICONV_H
 #include <iconv.h>
-#endif // YASKKSERV_CONFIG_HEADER_HAVE_ICONV_H
+#endif  // YASKKSERV_CONFIG_HEADER_HAVE_ICONV_H
+
+#ifdef YASKKSERV_CONFIG_MACRO_HAVE_SYMBOL_RESOLV_RETRANS_RETRY
+#include <resolv.h>
+#endif  // YASKKSERV_CONFIG_MACRO_HAVE_SYMBOL_RESOLV_RETRANS_RETRY
+
+#ifdef YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL
+#include <gnutls/gnutls.h>
+#include <gnutls/openssl.h>
+#endif  // YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL
+#ifdef YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL
+#include <openssl/crypto.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <openssl/md5.h>
+#endif  // YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL
 
 #endif // SKK_GCC_PRECOMPILE_H

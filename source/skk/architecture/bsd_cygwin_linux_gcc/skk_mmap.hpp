@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ public:
         {
                 if (buffer_)
                 {
-                        int result = munmap(buffer_, filesize_);
+                        int result = munmap(buffer_, static_cast<size_t>(filesize_));
                         if (result < 0)
                         {
                                 DEBUG_PRINTF("munmap failed\n");
@@ -73,7 +73,7 @@ public:
                         else
                         {
                                 filesize_ = static_cast<int>(stat_buffer.st_size);
-                                buffer_ = mmap(0, filesize_, PROT_READ, MAP_PRIVATE, file_descriptor_, 0);
+                                buffer_ = mmap(0, static_cast<size_t>(filesize_), PROT_READ, MAP_PRIVATE, file_descriptor_, 0);
                                 if (buffer_ == MAP_FAILED)
                                 {
                                         DEBUG_PRINTF("mmap failed.\n");

@@ -21,7 +21,7 @@ TARGET			= $(VAR_PATH)/$(TARGET_BASE)/$(TARGET_BASE)
 all			: $(TARGET)
 
 $(TARGET)		: $(OBJECTS_SKK) $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDFLAGS_LIBRARY_SIMPLE)
 ifndef DEBUG
 	$(STRIP) $@$(EXECUTE_FILE_SUFFIX)
 endif

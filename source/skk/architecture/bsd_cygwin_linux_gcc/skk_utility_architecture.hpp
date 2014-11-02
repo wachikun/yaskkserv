@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ inline int chmod(const char *path, mode_t mode)
 }
 inline void sleep(int second)
 {
-        ::sleep(second);
+        ::sleep(static_cast<unsigned int>(second));
 }
 
 class DictionaryPermission
@@ -100,12 +100,12 @@ public:
         bool waitAndCheckLoopHead(float timeout)
         {
                 // send の直後なので、ちょっと待つ。
-                usleep(100 * 1000);
+                usleep(10 * 1000);
                 // 余計な仕事もこのあたりで。
                 struct timeval time_current;
                 gettimeofday(&time_current, 0);
-                unsigned long long usec_start = time_start_.tv_sec * 1000 * 1000 + time_start_.tv_usec;
-                unsigned long long usec_current = time_current.tv_sec * 1000 * 1000 + time_current.tv_usec;
+                unsigned long long usec_start = static_cast<unsigned long long>(time_start_.tv_sec * 1000 * 1000 + time_start_.tv_usec);
+                unsigned long long usec_current = static_cast<unsigned long long>(time_current.tv_sec * 1000 * 1000 + time_current.tv_usec);
                 if (usec_current - usec_start >= static_cast<unsigned long long>(timeout * 1000.0f * 1000.0f))
                 {
                         return false;

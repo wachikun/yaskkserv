@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -242,7 +242,7 @@ private:
                                                 DEBUG_PRINTF("#### FAILED lseek() ERROR!!\n");
                                                 return false;
                                         }
-                                        int read_result = static_cast<int>(read(file_descriptor_, read_buffer_, read_size));
+                                        int read_result = static_cast<int>(read(file_descriptor_, read_buffer_, static_cast<size_t>(read_size)));
                                         if (read_result != read_size)
                                         {
                                                 DEBUG_PRINTF("#### FAILED read() ERROR!!  read_size = %d  read_result = %d\n",
@@ -355,7 +355,7 @@ private:
 
                                 return false;
                         }
-                        int read_result = static_cast<int>(read(file_descriptor_, read_buffer_, read_size));
+                        int read_result = static_cast<int>(read(file_descriptor_, read_buffer_, static_cast<size_t>(read_size)));
                         if (read_result != read_size)
                         {
                                 DEBUG_PRINTF("#### FAILED read() ERROR!!  read_size = %d  read_result = %d\n",
@@ -444,7 +444,7 @@ private:
                                 if (result)
                                 {
                                         index_ = new char[index_data_size];
-                                        if (read(file_descriptor_, index_, index_data_size) != index_data_size)
+                                        if (read(file_descriptor_, index_, static_cast<size_t>(index_data_size)) != index_data_size)
                                         {
                                                 result = false;
                                         }

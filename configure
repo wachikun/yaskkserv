@@ -6,27 +6,31 @@ use Getopt::Long;
 use File::Temp;
 
 my %global_options = (
-		      'prefix' => '/usr/local'
+		      'prefix' => '/usr/local',
+		      'enable-google-japanese-input' => !0,
+		      'enable-https' => !0,
+		      'enable-gnutls' => !0,
+		      'enable-openssl' => !0,
 		     );
 my %global;
 $global{'project_identifier'} = 'YASKKSERV';
-$global{'version'} = '0.5.3';
+$global{'version'} = '0.6.2';
 
-# GccIsSupport($gcc_version, 3, 2, 1);
-sub GccIsSupport ($$$$) {
-    my $gcc_version = $_[0];
+# CompilerIsSupport($compiler_version, 3, 2, 1);
+sub CompilerIsSupport ($$$$) {
+    my $compiler_version = $_[0];
     my $major = $_[1];
     my $minor = $_[2];
     my $sub = $_[3];
 
-    if ($gcc_version >= $major * 1000000 + $minor * 1000 + $sub * 1) {
+    if ($compiler_version >= $major * 1000000 + $minor * 1000 + $sub * 1) {
 	return !0;
     } else {
 	return 0;
     }
 }
 
-sub GccCheck ($$;$) {
+sub CompilerCheck ($$;$) {
     my $check_header = $_[0];
     my $check_body = $_[1];
     my $check_option = defined($_[2]) ? $_[2] : '';
@@ -42,13 +46,61 @@ sub GccCheck ($$;$) {
     close($wfh);
 
     # thanks! KURASHIKI-san
-    my $c = "$global{'gplusplus'} $check_option -c $temporary_filename_c -o $temporary_filename_o >/dev/null 2>&1";
+    my $c = "$global{'compiler'} $check_option -c $temporary_filename_c -o $temporary_filename_o >/dev/null 2>&1";
     system($c);
     my $result = $? ? 0 : !0;
 
     unlink($temporary_filename_o);
     unlink($temporary_filename_c);
 
+    return $result;
+}
+
+sub LinkerCheckLibrary ($) {
+    my $library_option = $_[0];
+
+    my $temporary_filename_base = '/tmp/yaskkserv.configure.XXXXX';
+    my ($wfh_dummy, $temporary_filename_execute) = File::Temp::mkstemps($temporary_filename_base, '');
+    my ($wfh, $temporary_filename_c) = File::Temp::mkstemps($temporary_filename_base, '.c');
+    print $wfh qq!int main(int argc, char *argv[])\n{\n!;
+    print $wfh qq!return 0;\n}\n!;
+    close($wfh);
+
+    my $c = "$global{'compiler'} $temporary_filename_c -o $temporary_filename_execute $library_option >/dev/null 2>&1";
+    system($c);
+    my $result = $? ? 0 : !0;
+
+    unlink($temporary_filename_execute);
+    unlink($temporary_filename_c);
+
+    return $result;
+}
+
+sub isGcc () {
+    if ($global{'compiler'} =~ /gcc/) {
+	return !0;
+    }
+    0;
+}
+
+sub isClang () {
+    if ($global{'compiler'} =~ /clang/) {
+	return !0;
+    }
+    0;
+}
+
+sub getPkgConfig {
+    my $command = $_[0];
+    my $args = $_[1];
+    my $result;
+    if (defined($global{'pkg-config'})) {
+	my $tmp = `pkg-config $command $args 2>&1`;
+	if ($? == 0) {
+	    chomp($tmp);
+	    $result = $tmp;
+	}
+    }
     return $result;
 }
 
@@ -66,36 +118,79 @@ $global{'data'} .= "# * DO NOT EDIT! *\n";
 $global{'data'} .= "#\n";
 
 GetOptions('gplusplus=s' => \$global_options{'gplusplus'},
+	   'compiler=s' => \$global_options{'compiler'},
            'help' => \$global_options{'help'},
            'enable-google-japanese-input' => \$global_options{'enable-google-japanese-input'},
+           'disable-google-japanese-input' => \$global_options{'disable-google-japanese-input'},
+           'enable-google-suggest' => \$global_options{'enable-google-suggest'},
+           'disable-google-suggest' => \$global_options{'disable-google-suggest'},
            'enable-syslog' => \$global_options{'enable-syslog'},
            'disable-syslog' => \$global_options{'disable-syslog'},
            'enable-error-message' => \$global_options{'enable-error-message'},
            'disable-error-message' => \$global_options{'disable-error-message'},
+           'enable-https' => \$global_options{'enable-https'},
+           'disable-https' => \$global_options{'disable-https'},
+           'enable-gnutls' => \$global_options{'enable-gnutls'},
+           'disable-gnutls' => \$global_options{'disable-gnutls'},
+           'enable-openssl' => \$global_options{'enable-openssl'},
+           'disable-openssl' => \$global_options{'disable-openssl'},
            'precompile' => \$global_options{'precompile'},
            'prefix=s' => \$global_options{'prefix'});
 
 if (defined($global_options{'help'})) {
     print "$0 usage\n";
-    print "    --gplusplus=G++                G++ [default path G++]\n";
-    print "    --help                         print this message\n";
-    print "    --enable-google-japanese-input enable google japanese input (for yaskkserv_hairy)\n";
-    print "    --enable-syslog                enable syslog [default]\n";
-    print "    --disable-syslog               disable syslog\n";
-    print "    --enable-error-message         enable error message [default]\n";
-    print "    --disable-error-message        disable error message\n";
-    print "    --precompile                   use precompile (only G++ 4.0 or newer)\n";
-    print "    --prefix=PREFIX                install root directory [/usr/local]\n";
+    print "    --gplusplus=COMPILER            *DEPRECATED* compiler [default g++]\n";
+    print "    --compiler=COMPILER             compiler (g++, clang++ or etc) [default g++]\n";
+    print "    --help                          print this message\n";
+    print "    --enable-google-japanese-input  enable google japanese input (for yaskkserv_hairy) [default enable]\n";
+    print "    --disable-google-japanese-input disable google japanese input (for yaskkserv_hairy) [default enable]\n";
+    print "    --enable-google-suggest         enable google suggest (for yaskkserv_hairy) [default disable]\n";
+    print "    --disable-google-suggest        disable google suggest (for yaskkserv_hairy) [default disable]\n";
+    print "    --enable-syslog                 enable syslog [default]\n";
+    print "    --disable-syslog                disable syslog\n";
+    print "    --enable-error-message          enable error message [default]\n";
+    print "    --disable-error-message         disable error message\n";
+    print "    --enable-https                  enable HTTPS [default]\n";
+    print "    --disable-https                 disable HTTPS\n";
+    print "    --enable-gnutls                 enable GnuTLS [default]\n";
+    print "    --disable-gnutls                disable GnuTLS\n";
+    print "    --enable-openssl                enable OpenSSL [default]\n";
+    print "    --disable-openssl               disable OpenSSL\n";
+    print "    --precompile                    use precompile (for G++ 4.0 or newer)\n";
+    print "    --prefix=PREFIX                 install root directory [/usr/local]\n";
     die;
 }
 
 {
-    if (defined($global_options{'gplusplus'})) {
-	$global{'gplusplus'} = $global_options{'gplusplus'};
+    $_ = `pkg-config --version 2>&1`;
+    if (defined($_)) {
+	$global{'pkg-config'} = $_;
+	print "pkg-config (found)\n";
     } else {
-	$global{'gplusplus'} = 'g++';
+	print "pkg-config (not found)\n";
     }
-    $global{'data'} .= "export GPLUSPLUS			= $global{'gplusplus'}\n";
+}
+
+{
+    if (defined($global_options{'gplusplus'})) {
+	$global{'compiler'} = $global_options{'gplusplus'};
+	print "*** Warning : --gplusplus is deprecated\n";
+    } elsif (defined($global_options{'compiler'})) {
+	$global{'compiler'} = $global_options{'compiler'};
+    } else {
+	my $tmp = 'g++';
+	$_ = `$tmp -v 2>&1`;
+	if (defined($_)) {
+	} else {
+	    $tmp = 'clang++';
+	    $_ = `$tmp -v 2>&1`;
+	    unless (defined($_)) {
+		print STDERR "*** Warning : compiler not found!\n";
+	    }
+	}
+	$global{'compiler'} = $tmp;
+    }
+    $global{'data'} .= "export COMPILER				= $global{'compiler'}\n";
 }
 
 {
@@ -159,75 +254,51 @@ if (defined($global_options{'help'})) {
 }
 
 {
-    $_ = `uname 2>&1`;
-    if (/(bsd)/i or /(darwin)/i or /(cygwin)/i or /(linux)/i) {
-	$global{'OSNAME'} = $1;
-	$global{'architecture'} = 'BSD_CYGWIN_LINUX_GCC';
-	$global{'CXXFLAGS_ARCHITECTURE'} = "-D $global{'project_identifier'}_ARCHITECTURE_BSD_CYGWIN_LINUX_GCC";
-	$global{'LDFLAGS_ARCHITECTURE'} = '-lrt';
-    } else {
-	print STDERR "*** Warning : unknown architecture ($_)\n";
-	$global{'OSNAME'} = 'linux';
-	$global{'architecture'} = 'BSD_CYGWIN_LINUX_GCC';
-	$global{'CXXFLAGS_ARCHITECTURE'} = "-D $global{'project_identifier'}_ARCHITECTURE_BSD_CYGWIN_LINUX_GCC";
-	$global{'LDFLAGS_ARCHITECTURE'} = '';
-    }
-
-    if (/cygwin/i) {
-	$global{'EXECUTE_FILE_SUFFIX'} = '.exe';
-    } else {
-	$global{'EXECUTE_FILE_SUFFIX'} = '';
-    }
-
-    die "unknown architecture \"$_\"" unless defined($global{'architecture'});
-
-    $global{'data'} .= "export CXXFLAGS_ARCHITECTURE		= $global{'CXXFLAGS_ARCHITECTURE'}\n";
-    $global{'data'} .= "export LDFLAGS_ARCHITECTURE		= $global{'LDFLAGS_ARCHITECTURE'}\n";
-    $global{'data'} .= "export ARCHITECTURE			= $global{'architecture'}\n";
-    $_ = $global{'architecture'};
-    tr/A-Z/a-z/;
-    $global{'data'} .= "export ARCHITECTURE_LOWER_CASE		= $_\n";
-    $global{'data'} .= "export EXECUTE_FILE_SUFFIX		= $global{'EXECUTE_FILE_SUFFIX'}\n";
-    $global{'data'} .= "export OSNAME				= $global{'OSNAME'}\n";
-}
-
-{
-    my @gcc_version;
-    foreach (split(/[\r\n]+/, `$global{'gplusplus'} -v 2>&1`)) {
-	if (/^\s*gcc\s+version/ and m!\s+(\d+)\.(\d+)\.?(\d+)?!) {
-	    @gcc_version = ($1, $2, $3);
+    my @compiler_version;
+    foreach (split(/[\r\n]+/, `$global{'compiler'} -v 2>&1`)) {
+	if (/\s*clang\s+version/ and m!\s+(\d+)\.(\d+)\.?(\d+)?!) {
+	    @compiler_version = ($1, $2, $3);
+	    last;
+	} elsif (/^\s*gcc\s+version/ and m!\s+(\d+)\.(\d+)\.?(\d+)?!) {
+	    @compiler_version = ($1, $2, $3);
 	    last;
 	}
     }
 
-    if ($#gcc_version == -1) {
-	$global{'gcc_version'} = 0;
-	print STDERR "*** Warning : G++ version failed.\n";
+    if ($#compiler_version == -1) {
+	$global{'compiler_version'} = 0;
+	print STDERR "*** Warning : compiler version check failed.\n";
     } else {
-	my $pow = $#gcc_version;
-	foreach (@gcc_version) {
+	my $pow = $#compiler_version;
+	foreach (@compiler_version) {
 	    $_ = 0 unless defined($_);
-	    $global{'gcc_version'} += $_ * (1000 ** $pow);
+	    $global{'compiler_version'} += $_ * (1000 ** $pow);
 	    --$pow;
 	}
 	my $tmp;
-	foreach (@gcc_version) {
+	foreach (@compiler_version) {
 	    $tmp .= "$_.";
 	}
 	chop $tmp;
-	print "G++ ($tmp)\n";
+	print "compiler $global{'compiler'} ($tmp)\n";
     }
 
-    unless (GccIsSupport($global{'gcc_version'}, 3, 3, 0)) {
-	print STDERR "*** Warning : G++ is too old. You need version 3.3 or newer.\n";
+    if (isGcc()) {
+	unless (CompilerIsSupport($global{'compiler_version'}, 3, 3, 0)) {
+	    print STDERR "*** Warning : G++ is too old. need version 3.3 or newer.\n";
+	}
     }
 }
 
 if (defined($global_options{'precompile'})) {
-    if (GccIsSupport($global{'gcc_version'}, 4, 0, 0)) {
+    if (isClang()) {
 	$global{'data'} .= "export USE_PRECOMPILE   		= t\n";
-    } else {
-	print STDERR "*** Warning : G++ is too old. You need version 4.0 or newer.\n";
+    } elsif (isGcc()) {
+	if (CompilerIsSupport($global{'compiler_version'}, 4, 0, 0)) {
+	    $global{'data'} .= "export USE_PRECOMPILE   		= t\n";
+	} else {
+	    print STDERR "*** Warning : G++ is too old. need version 4.0 or newer.\n";
+	}
     }
 }
 
@@ -248,30 +319,255 @@ if (defined($global_options{'precompile'})) {
 	$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_ENABLE_ERROR_MESSAGE\n";
     }
 
-    if (defined($global_options{'enable-google-japanese-input'})) {
-	$_ = 'iconv.h';
-	my $header_symbol = $_;
-	$header_symbol =~ tr/a-z/A-Z/;
-	$header_symbol =~ s![\./]!_!g;
-	if (GccCheck("#include <$_>\n",
-		     '')) {
-	    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT\n";
-	    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HEADER_HAVE_$header_symbol\n";
-	    print "$_ (found)\n";
-	} else {
-	    print "$_ (not found : DISABLE --enable-google-japanese-include)\n";
+    if (defined($global_options{'enable-google-japanese-input'}) and
+	!defined($global_options{'disable-google-japanese-input'})) {
+	{
+	    $_ = 'iconv.h';
+	    my $found_flag;
+	    my $header_symbol = $_;
+	    $header_symbol =~ tr/a-z/A-Z/;
+	    $header_symbol =~ s![\./]!_!g;
+	    if (CompilerCheck("#include <$_>\n", '')) {
+		my $const_char_code = <<EOT;
+iconv_t icd;
+const char *in_buffer = 0;
+char *out_buffer = 0;
+size_t in_size = 0;
+size_t out_size = 0;
+iconv(icd, &in_buffer, &in_size, &out_buffer, &out_size);
+EOT
+		my $char_code = <<EOT;
+iconv_t icd;
+char *in_buffer = 0;
+char *out_buffer = 0;
+size_t in_size = 0;
+size_t out_size = 0;
+iconv(icd, &in_buffer, &in_size, &out_buffer, &out_size);
+EOT
+		if (CompilerCheck("#include <$_>\n", $const_char_code)) {
+		    $found_flag = !0;
+		    print qq{$_ (argument "const char *" found)\n};
+		    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_ICONV_ARGUMENT_CONST_CHAR\n";
+		} elsif (CompilerCheck("#include <$_>\n", $char_code)) {
+		    $found_flag = !0;
+		    print qq{$_ (argument "char *" found)\n};
+		    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_ICONV_ARGUMENT_CHAR\n";
+		} else {
+		    print STDERR "*** Warning : iconv not found\n";
+		}
+		if (defined($found_flag)) {
+		    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT\n";
+		    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HEADER_HAVE_$header_symbol\n";
+		    if (defined($global_options{'enable-google-suggest'}) and
+			!defined($global_options{'disable-google-suggest'})) {
+			$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_ENABLE_GOOGLE_SUGGEST\n";
+		    }
+		}
+	    }
+	    unless (defined($found_flag)) {
+		print "$_ (not found : DISABLE --enable-google-japanese-input)\n";
+		$global_options{'enable-google-japanese-input'} = undef;
+	    }
 	}
+	if (defined($global_options{'enable-https'}) and !defined($global_options{'disable-https'})) {
+	    if (defined($global_options{'enable-gnutls'}) and !defined($global_options{'disable-gnutls'})) {
+		if (CompilerCheck("#include <gnutls/gnutls.h>\n" .
+				  "#include <gnutls/crypto.h>\n" .
+				  "#include <gnutls/openssl.h>\n"
+				  ,
+				  '')) {
+		    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL\n";
+		    $global{'HAVE_GNUTLS_OPENSSL'} = !0;
+		    print STDERR "SSL GnuTLS\n";
+		}
+		if (defined($global{'HAVE_GNUTLS_OPENSSL'})) {
+		    if (CompilerCheck("#include <gnutls/gnutls.h>\n" .
+				      "#include <gnutls/crypto.h>\n" .
+				      "#include <gnutls/openssl.h>\n"
+				      ,
+				      'RAND_poll();')) {
+			$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HEADER_HAVE_RAND_POLL\n";
+			print STDERR "SSL GnuTLS RAND_poll() (found)\n";
+		    } else {
+			print STDERR "SSL GnuTLS RAND_poll() (not found)\n";
+		    }
+		}
+	    }
+	    if (!defined($global{'HAVE_GNUTLS_OPENSSL'}) and
+		defined($global_options{'enable-openssl'}) and !defined($global_options{'disable-openssl'})) {
+		if (CompilerCheck("#include <openssl/crypto.h>\n" .
+				  "#include <openssl/ssl.h>\n" .
+				  "#include <openssl/err.h>\n" .
+				  "#include <openssl/rand.h>\n"
+				  ,
+				  '')) {
+		    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HEADER_HAVE_OPENSSL\n";
+		    $global{'HAVE_OPENSSL'} = !0;
+		    print STDERR "SSL OpenSSL\n";
+		}
+		if (defined($global{'HAVE_OPENSSL'})) {
+		    if (CompilerCheck("#include <openssl/crypto.h>\n" .
+				      "#include <openssl/ssl.h>\n" .
+				      "#include <openssl/err.h>\n" .
+				      "#include <openssl/rand.h>\n"
+				      ,
+				      'RAND_poll();')) {
+			$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HEADER_HAVE_RAND_POLL\n";
+			print STDERR "SSL OpenSSL RAND_poll() (found)\n";
+		    } else {
+			print STDERR "SSL OpenSSL RAND_poll() (not found)\n";
+		    }
+		}
+	    }
+	    if (!defined($global{'HAVE_GNUTLS_OPENSSL'}) and !defined($global{'HAVE_OPENSSL'})) {
+		if (!defined($global{'HAVE_GNUTLS_OPENSSL'})) {
+		    print STDERR "*** Warning : GnuTLS not found(or disable)\n";
+		}
+		if (!defined($global{'HAVE_OPENSSL'})) {
+		    print STDERR "*** Warning : OpenSSL not found(or disable)\n";
+		}
+	    }
+	} else {
+	    print STDERR "*** Warning : HTTPS disabled\n";
+	}
+    } else {
+	$global_options{'enable-google-japanese-input'} = undef;
     }
 }
 
 {
-    if (GccCheck("#include <sys/socket.h>\n",
-		 "int tmp = MSG_NOSIGNAL;\n")) {
+    if (CompilerCheck("#include <sys/socket.h>\n", "int tmp = MSG_NOSIGNAL;\n")) {
 	$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_MACRO_HAVE_SYMBOL_MSG_NOSIGNAL\n";
 	print "MSG_NOSIGNAL (found)\n";
     } else {
 	print "MSG_NOSIGNAL (not found)\n";
     }
+}
+
+{
+    if (CompilerCheck("#include <resolv.h>\n", "res_state r = &_res; int retrans = r->retrans; int retry = r->retry;\n")) {
+	$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_MACRO_HAVE_SYMBOL_RESOLV_RETRANS_RETRY\n";
+	print "RESOLV_RETRANS_RETRY (found)\n";
+    } else {
+	print "RESOLV_RETRANS_RETRY (not found)\n";
+    }
+}
+
+{
+    if (CompilerCheck("#include <signal.h>\n" .
+		      "#include <time.h>\n"
+		      ,
+		      "timer_t timer_id;\n" .
+		      "timer_create(CLOCK_REALTIME, 0, &timer_id);\n")) {
+	$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_FUNCTION_HAVE_TIMER_CREATE\n";
+	$global{'HAVE_TIMER_CREATE'} = !0;
+	print "timer_create() (found)\n";
+    } else {
+	print "timer_create() (not found)\n";
+    }
+}
+
+{
+    if (CompilerCheck("#include <signal.h>\n" .
+		      "#include <pthread.h>\n"
+		      ,
+		      "sigset_t sigset;\n" .
+		      "pthread_sigmask(SIG_SETMASK, &sigset, NULL);\n")) {
+	$global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HAVE_PTHREAD\n";
+	$global{'HAVE_PTHREAD'} = !0;
+	print "pthread (found)\n";
+    } else {
+	print "pthread (not found)\n";
+    }
+}
+
+{
+    $_ = `uname 2>&1`;
+    if (/(bsd)/i or /(darwin)/i or /(cygwin)/i or /(linux)/i) {
+	$global{'OSNAME'} = $1;
+    } else {
+	print STDERR "*** Warning : unknown architecture ($_)\n";
+	$global{'OSNAME'} = 'linux';
+    }
+    $global{'architecture'} = 'BSD_CYGWIN_LINUX_GCC';
+    $global{'CXXFLAGS_ARCHITECTURE'} = "-D $global{'project_identifier'}_ARCHITECTURE_BSD_CYGWIN_LINUX_GCC";
+    if (CompilerCheck('', '', '-std=c++11')) {
+	$global{'CXXFLAGS_ARCHITECTURE'} .= ' -std=c++11 -D YASKKSERV_ARCHITECTURE_CXX11';
+	print STDERR "c++11 supported\n";
+    }
+    $global{'LDFLAGS_ARCHITECTURE'} = '';
+    $global{'LDFLAGS_LIBRARY_SIMPLE'} = '';
+    $global{'LDFLAGS_LIBRARY_NORMAL'} = '';
+    $global{'LDFLAGS_LIBRARY_HAIRY'} = '';
+    if (LinkerCheckLibrary('-liconv')) {
+	$global{'LDFLAGS_LIBRARY_HAIRY'} .= ' -liconv';
+    }
+    $global{'LDFLAGS_LIBRARY_HAIRY'} .= ' -lrt' if defined($global{'HAVE_TIMER_CREATE'});
+    if (defined($global{'HAVE_GNUTLS_OPENSSL'})) {
+	my $tmp = getPkgConfig('gnutls', '--libs');
+	my $libs;
+	if (defined($tmp)) {
+	    $libs = ' ' . $tmp . ' -lgnutls-openssl';
+	    unless (LinkerCheckLibrary($libs)) {
+		$libs = undef;
+	    }
+	}
+	unless (defined($libs)) {
+	    if (LinkerCheckLibrary('-lgnutls-openssl')) {
+		$libs = ' -lgnutls-openssl';
+	    }
+	}
+	if (defined($libs)) {
+	    $global{'LDFLAGS_LIBRARY_HAIRY'} .= $libs;
+	} else {
+	    print STDERR "*** Warning : GnuTLS library NOT FOUND\n";
+	}
+    }
+    if (defined($global{'HAVE_OPENSSL'})) {
+	my $tmp = getPkgConfig('openssl', '--libs');
+	my $libs;
+	if (defined($tmp)) {
+	    $libs = ' ' . $tmp;
+	    unless (LinkerCheckLibrary($libs)) {
+		$libs = undef;
+	    }
+	}
+	unless (defined($libs)) {
+	    if (LinkerCheckLibrary('-lssl -lcrypto')) {
+		$libs = ' -lssl -lcrypto';
+	    }
+	}
+	if (defined($libs)) {
+	    $global{'LDFLAGS_LIBRARY_HAIRY'} .= $libs;
+	} else {
+	    print STDERR "*** Warning : OpenSSL library NOT FOUND\n";
+	}
+    }
+    if (defined($global{'HAVE_PTHREAD'})) {
+	if (LinkerCheckLibrary('-lpthread')) {
+	    $global{'LDFLAGS_LIBRARY_HAIRY'} .= ' -lpthread';
+	}
+    }
+
+    if (/cygwin/i) {
+	$global{'EXECUTE_FILE_SUFFIX'} = '.exe';
+    } else {
+	$global{'EXECUTE_FILE_SUFFIX'} = '';
+    }
+
+    die "unknown architecture \"$_\"" unless defined($global{'architecture'});
+
+    $global{'data'} .= "export CXXFLAGS_ARCHITECTURE		= $global{'CXXFLAGS_ARCHITECTURE'}\n";
+    $global{'data'} .= "export LDFLAGS_ARCHITECTURE		= $global{'LDFLAGS_ARCHITECTURE'}\n";
+    $global{'data'} .= "export LDFLAGS_LIBRARY_SIMPLE		= $global{'LDFLAGS_LIBRARY_SIMPLE'}\n";
+    $global{'data'} .= "export LDFLAGS_LIBRARY_NORMAL		= $global{'LDFLAGS_LIBRARY_NORMAL'}\n";
+    $global{'data'} .= "export LDFLAGS_LIBRARY_HAIRY		= $global{'LDFLAGS_LIBRARY_HAIRY'}\n";
+    $global{'data'} .= "export ARCHITECTURE			= $global{'architecture'}\n";
+    $_ = $global{'architecture'};
+    tr/A-Z/a-z/;
+    $global{'data'} .= "export ARCHITECTURE_LOWER_CASE		= $_\n";
+    $global{'data'} .= "export EXECUTE_FILE_SUFFIX		= $global{'EXECUTE_FILE_SUFFIX'}\n";
+    $global{'data'} .= "export OSNAME				= $global{'OSNAME'}\n";
 }
 
 {
@@ -286,15 +582,19 @@ if (defined($global_options{'precompile'})) {
 
 {
     my $common = '';
-    if (GccCheck('', '', '-march=native')) {
+    if (CompilerCheck('', '', '-march=native')) {
 	$common .= '-march=native';
     }
     my $optimize = '';
-    if (GccIsSupport($global{'gcc_version'}, 4, 0, 0)) {
-	if (GccCheck('', '', '-Ofast')) {
+    if (isClang() or CompilerIsSupport($global{'compiler_version'}, 4, 0, 0)) {
+	if (CompilerCheck("#include <math.h>\n", '', '-Ofast')) {
 	    $optimize .= '-Ofast';
-	} else {
+	} elsif (CompilerCheck("#include <math.h>\n", '', '-O3')) {
 	    $optimize .= '-O3';
+	    print STDERR "*** Warning : -Ofast failed\n";
+	} else {
+	    $optimize .= '-Os';
+	    print STDERR "*** Warning : -Ofast, -O3 failed\n";
 	}
     } else {
 	# gcc3 系で物理メモリが一定サイズ以下、あるいは疑わしいならば、
@@ -309,10 +609,13 @@ if (defined($global_options{'precompile'})) {
 	}
 
 	if ($memory_size < 320000) {
-	    $optimize .= '-O1';
-	    print STDERR "*** Warning : optimize level changed (-O3 to -O1)\n";
-	} else {
+	    $optimize .= '-Os';
+	    print STDERR "*** Warning : optimize level changed (-O3 to -Os)\n";
+	} elsif (CompilerCheck("#include <math.h>\n", '', '-O3')) {
 	    $optimize .= '-O3';
+	} else {
+	    $optimize .= '-Os';
+	    print STDERR "*** Warning : -O3 failed\n";
 	}
     }
 
@@ -347,29 +650,40 @@ if (defined($global_options{'precompile'})) {
     {
 	$global{'data'} .= 'export CXXFLAGS_WARNING_SERVER_SIMPLE	= ';
 
-	$global{'data'} .= "$common_4_2_0 " if GccIsSupport($global{'gcc_version'}, 4, 2, 0);
+	$global{'data'} .= "$common_4_2_0 " if isClang() or CompilerIsSupport($global{'compiler_version'}, 4, 2, 0);
 	$global{'data'} .= "$common\n";
     }
 
     {
 	$global{'data'} .= 'export CXXFLAGS_WARNING_SERVER_NORMAL	= ';
 
-	$global{'data'} .= "$common_4_2_0 " if GccIsSupport($global{'gcc_version'}, 4, 2, 0);
+	$global{'data'} .= "$common_4_2_0 " if isClang() or CompilerIsSupport($global{'compiler_version'}, 4, 2, 0);
 	$global{'data'} .= "$common\n";
     }
 
     {
 	$global{'data'} .= 'export CXXFLAGS_WARNING_SERVER_HAIRY	= ';
 
-	$global{'data'} .= "$common_4_2_0 " if GccIsSupport($global{'gcc_version'}, 4, 2, 0);
+	$global{'data'} .= "$common_4_2_0 " if isClang() or CompilerIsSupport($global{'compiler_version'}, 4, 2, 0);
 	$global{'data'} .= "$common\n";
     }
 
     {
 	$global{'data'} .= "export CXXFLAGS_WARNING_TOOL		= ";
 
-	$global{'data'} .= "$common_4_2_0 " if GccIsSupport($global{'gcc_version'}, 4, 2, 0);
+	$global{'data'} .= "$common_4_2_0 " if isClang() or CompilerIsSupport($global{'compiler_version'}, 4, 2, 0);
 	$global{'data'} .= "$common\n";
+    }
+}
+
+if (defined($global_options{'enable-google-japanese-input'})) {
+    print "************************************\n";
+    print "** enable google japanese input ! **\n";
+    print "**     enable google suggest !    **\n" if defined $global_options{'enable-google-suggest'};
+    print "************************************\n";
+} else {
+    if (defined($global_options{'enable-google-suggest'})) {
+	die "illegal options --enable-google-suggest";
     }
 }
 

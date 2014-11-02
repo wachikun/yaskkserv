@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -22,6 +22,8 @@
 
 namespace YaSkkServ
 {
+extern int global_sighup_flag;
+
 /// デバッグに関連する名前空間です。
 /**
  * \attention
@@ -87,12 +89,20 @@ public:
 void printf_core(const char *filename, int line, const char *p, ...);
 void print_core(const char *filename, int line, const char *p);
 
+#ifdef YASKKSERV_ARCHITECTURE_CXX11
+#define DEBUG_PRINTF(...) Debug::printf_core(__FILE__, __LINE__, __VA_ARGS__)
+#else  // YASKKSERV_ARCHITECTURE_CXX11
 #define DEBUG_PRINTF(p, args...) Debug::printf_core(__FILE__, __LINE__, p, ## args)
+#endif // YASKKSERV_ARCHITECTURE_CXX11
 #define DEBUG_PRINT(p) Debug::print_core(__FILE__, __LINE__, p)
 
 #else  // YASKKSERV_DEBUG
 
+#ifdef YASKKSERV_ARCHITECTURE_CXX11
+#define DEBUG_PRINTF(...)
+#else  // YASKKSERV_ARCHITECTURE_CXX11
 #define DEBUG_PRINTF(p, args...)
+#endif // YASKKSERV_ARCHITECTURE_CXX11
 #define DEBUG_PRINT(p)
 
 #endif  // YASKKSERV_DEBUG

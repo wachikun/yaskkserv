@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -867,7 +867,7 @@ inline void clearMemory(void *p, int size)
 {
         DEBUG_ASSERT_POINTER(p);
         DEBUG_ASSERT(size > 0);
-        memset(p, 0, size);
+        memset(p, 0, static_cast<size_t>(size));
 }
 
 inline void copyMemory(const void *source, void *destination, int size)
@@ -875,7 +875,13 @@ inline void copyMemory(const void *source, void *destination, int size)
         DEBUG_ASSERT_POINTER(source);
         DEBUG_ASSERT_POINTER(destination);
         DEBUG_ASSERT(size > 0);
-        memcpy(destination, source, size);
+        memcpy(destination, source, static_cast<size_t>(size));
+}
+
+inline int getStringLength(const void * const string)
+{
+        DEBUG_ASSERT_POINTER(string);
+        return static_cast<int>(strlen(static_cast<const char * const>(string)));
 }
 
 /// 文字 C の次の文字へのポインタを返します。
@@ -1080,7 +1086,7 @@ public:
         {
                 DEBUG_PRINTF("hash_table_length = %d  size = %d\n",
                              hash_table_length_,
-                             hash_table_length_ * sizeof(Unit));
+                             hash_table_length_ * static_cast<int>(sizeof(Unit)));
         }
 
         int getHashTableLength()

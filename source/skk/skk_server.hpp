@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -115,7 +115,7 @@ public:
         {
         }
 
-        void printFirstSyslog(void)
+        void printFirstSyslog()
         {
                 syslog_.printf(1, SkkSyslog::LEVEL_INFO, "version " YASKKSERV_VERSION " (port=%d)", port_);
         }
@@ -297,6 +297,37 @@ protected:
 #endif  // SKK_MEMORY_DEBUG
                 }
                 int n = select(file_descriptor_maximum + 1, &fd_set_read, 0, 0, 0);
+                if ((n == -1) && (errno == EINTR))
+                {
+                        syslog_.printf(1, SkkSyslog::LEVEL_INFO, "caught signal");
+                }
+                return n;
+        }
+
+        int main_loop_select_polling(fd_set &fd_set_read)
+        {
+                int file_descriptor_maximum = file_descriptor_;
+                FD_ZERO(&fd_set_read);
+                FD_SET(file_descriptor_, &fd_set_read);
+                for (int i = 0; i != max_connection_; ++i)
+                {
+                        if ((work_ + i)->flag)
+                        {
+                                FD_SET((work_ + i)->file_descriptor, &fd_set_read);
+                                if ((work_ + i)->file_descriptor > file_descriptor_maximum)
+                                {
+                                        file_descriptor_maximum = (work_ + i)->file_descriptor;
+                                }
+                        }
+#ifdef SKK_MEMORY_DEBUG
+                        skk_memory_debug_check_((work_ + i)->read_buffer - SKK_MEMORY_DEBUG_MARGIN_SIZE);
+                        skk_memory_debug_check_((work_ + i)->read_buffer - SKK_MEMORY_DEBUG_MARGIN_SIZE + SKK_MEMORY_DEBUG_MARGIN_SIZE + READ_BUFFER_SIZE);
+#endif  // SKK_MEMORY_DEBUG
+                }
+                struct timeval timeout;
+                timeout.tv_sec = 3;
+                timeout.tv_usec = 0;
+                int n = select(file_descriptor_maximum + 1, &fd_set_read, 0, 0, &timeout);
                 if ((n == -1) && (errno == EINTR))
                 {
                         syslog_.printf(1, SkkSyslog::LEVEL_INFO, "caught signal");

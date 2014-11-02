@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -20,12 +20,14 @@
 
 namespace YaSkkServ
 {
+int global_sighup_flag = 0;
 int local_main(int argc, char *argv[]);
 
 namespace
 {
 void signal_dictionary_update_handler(int signum)
 {
+        global_sighup_flag = 1;
         signum = 0;             // KILLWARNING
 }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -50,7 +50,8 @@ public:
                 max_connection_(0),
                 listen_queue_(0),
 
-                dictionary_check_update_flag_(false)
+                dictionary_check_update_flag_(false),
+                no_daemonize_flag_(false)
         {
         }
 
@@ -59,7 +60,8 @@ public:
                         int skk_dictionary_length,
                         int max_connection,
                         int listen_queue,
-                        bool dictionary_check_update_flag)
+                        bool dictionary_check_update_flag,
+                        bool no_daemonize_flag)
         {
                 skk_dictionary_ = skk_dictionary;
                 dictionary_filename_table_ = dictionary_filename_table;
@@ -69,6 +71,7 @@ public:
                 listen_queue_ = listen_queue;
 
                 dictionary_check_update_flag_ = dictionary_check_update_flag;
+                no_daemonize_flag_ = no_daemonize_flag;
         }
 
         bool mainLoop()
@@ -77,19 +80,22 @@ public:
                 if (result)
                 {
 #ifndef YASKKSERV_DEBUG
-                        if (fork() != 0)
+                        if (!no_daemonize_flag_)
                         {
-                                exit(0);
-                        }
-                        if (chdir("/") != 0)
-                        {
-                                // why?
-                        }
-                        close(2);
-                        close(1);
-                        close(0);
+                                if (fork() != 0)
+                                {
+                                        exit(0);
+                                }
+                                if (chdir("/") != 0)
+                                {
+                                        // why?
+                                }
+                                close(2);
+                                close(1);
+                                close(0);
 
-                        printFirstSyslog();
+                                printFirstSyslog();
+                        }
 #endif  // YASKKSERV_DEBUG
                         result = local_main_loop();
                         if (result)
@@ -123,6 +129,7 @@ private:
         int listen_queue_;
 
         bool dictionary_check_update_flag_;
+        bool no_daemonize_flag_;
 };
 
 bool LocalSkkServer::local_main_loop_1_search_single_dictionary(int work_index)
@@ -188,7 +195,7 @@ bool LocalSkkServer::local_main_loop_1_search_plural_dictionary(int work_index, 
         SkkUtility::Hash<SkkUtility::HASH_TYPE_CANDIDATE> hash(hash_table_length);
 
 // protocol header + first slash
-        string.append("1/");
+        string.appendFast("1/");
 
         for (int h = 0; h != skk_dictionary_length_; ++h)
         {
@@ -206,7 +213,10 @@ bool LocalSkkServer::local_main_loop_1_search_plural_dictionary(int work_index, 
                                         {
                                                 hash.add(start, size);
                                                 const int tail_slash_size = 1;
-                                                string.append(start, size + tail_slash_size);
+                                                if (!string.append(start, size + tail_slash_size))
+                                                {
+                                                        return false;
+                                                }
                                         }
                                 }
                                 else
@@ -386,6 +396,7 @@ int print_usage()
                            "  -l, --log-level=LEVEL    loglevel (range [0 - 9]  default 1)\n"
                            "  -m, --max-connection=N   max connection (default 8)\n"
                            "  -p, --port=PORT          set port (default 1178)\n"
+                           "  -f, --no-daemonize       not daemonize\n"
                            "  -v, --version            print version\n");
         return EXIT_FAILURE;
 }
@@ -393,7 +404,7 @@ int print_usage()
 int print_version()
 {
         SkkUtility::printf("yaskkserv_" SERVER_IDENTIFIER " version " YASKKSERV_VERSION "\n");
-        SkkUtility::printf("Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe\n");
+        SkkUtility::printf("Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe\n");
         SkkUtility::printf("http://umiushi.org/~wac/yaskkserv/\n");
         return EXIT_FAILURE;
 }
@@ -406,6 +417,7 @@ enum
         OPTION_TABLE_LOG_LEVEL,
         OPTION_TABLE_MAX_CONNECTION,
         OPTION_TABLE_PORT,
+        OPTION_TABLE_NO_DAEMONIZE,
         OPTION_TABLE_VERSION,
 
         OPTION_TABLE_LENGTH
@@ -438,6 +450,10 @@ const SkkCommandLine::Option option_table[] =
                 SkkCommandLine::OPTION_ARGUMENT_INTEGER,
         },
         {
+                "f", "no-daemonize",
+                SkkCommandLine::OPTION_ARGUMENT_NONE,
+        },
+        {
                 "v", "version",
                 SkkCommandLine::OPTION_ARGUMENT_NONE,
         },
@@ -452,6 +468,7 @@ struct Option
         int log_level;
         int max_connection;
         int port;
+        bool no_daemonize_flag;
         bool check_update_flag;
         bool debug_flag;
 }
@@ -460,6 +477,7 @@ option =
         1,
         8,
         1178,
+        false,
         false,
         false,
 };
@@ -522,6 +540,10 @@ bool local_main_core_command_line(SkkCommandLine &command_line, int &result, int
                                 result = print_usage();
                                 return true;
                         }
+                }
+                if (command_line.isOptionDefined(OPTION_TABLE_NO_DAEMONIZE))
+                {
+                        option.no_daemonize_flag = true;
                 }
         }
         else
@@ -589,7 +611,8 @@ int local_main_core(int argc, char *argv[])
                                        skk_dictionary_length,
                                        option.max_connection,
                                        listen_queue,
-                                       option.check_update_flag);
+                                       option.check_update_flag,
+                                       option.no_daemonize_flag);
                 if (!skk_server->mainLoop())
                 {
                         result = EXIT_FAILURE;

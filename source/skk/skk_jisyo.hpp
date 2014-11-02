@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -259,15 +259,20 @@ public:
                         return true;
                 }
 
-                int32_t get(int index)
+                int32_t getSwap(int index) const
+                {
+                        return static_cast<int32_t>((static_cast<uint32_t>(array[index] << 24) & 0xff000000UL) |
+                                                    (static_cast<uint32_t>(array[index] << 8) & 0x00ff0000UL) |
+                                                    (static_cast<uint32_t>(array[index] >> 8) & 0x0000ff00UL) |
+                                                    (static_cast<uint32_t>(array[index] >> 24) & 0x000000ffUL));
+                }
+
+                int32_t get(int index) const
                 {
 #ifdef YASKKSERV_ARCHITECTURE_BYTE_ORDER_NETWORK
                         if (array[0] & BIT_FLAG_BYTE_ORDER_VAX)
                         {
-                                return ((array[index] << 24) & 0xff000000) |
-                                       ((array[index] << 8) & 0x00ff0000) |
-                                       ((array[index] >> 8) & 0x0000ff00) |
-                                       ((array[index] >> 24) & 0x000000ff);
+                                return getSwap(index);
                         }
                         else
                         {
@@ -282,10 +287,7 @@ public:
                         }
                         else
                         {
-                                return ((array[index] << 24) & 0xff000000) |
-                                       ((array[index] << 8) & 0x00ff0000) |
-                                       ((array[index] >> 8) & 0x0000ff00) |
-                                       ((array[index] >> 24) & 0x000000ff);
+                                return getSwap(index);
                         }
 #endif  // YASKKSERV_ARCHITECTURE_BYTE_ORDER_VAX
                 }
@@ -295,10 +297,7 @@ public:
 #ifdef YASKKSERV_ARCHITECTURE_BYTE_ORDER_NETWORK
                         if (array[0] & BIT_FLAG_BYTE_ORDER_VAX)
                         {
-                                array[index] = ((scalar << 24) & 0xff000000) |
-                                               ((scalar << 8) & 0x00ff0000) |
-                                               ((scalar >> 8) & 0x0000ff00) |
-                                               ((scalar >> 24) & 0x000000ff);
+                                array[index] = getSwap(index);
                         }
                         else
                         {
@@ -313,10 +312,7 @@ public:
                         }
                         else
                         {
-                                array[index] = ((scalar << 24) & 0xff000000) |
-                                               ((scalar << 8) & 0x00ff0000) |
-                                               ((scalar >> 8) & 0x0000ff00) |
-                                               ((scalar >> 24) & 0x000000ff);
+                                array[index] = getSwap(index);
                         }
 #endif  // YASKKSERV_ARCHITECTURE_BYTE_ORDER_VAX
                 }
@@ -651,7 +647,7 @@ private:
                 {
                         return false;
                 }
-                if (fwrite(buffer + index, line_size + cr_size, 1, file) < 1)
+                if (fwrite(buffer + index, static_cast<size_t>(line_size + cr_size), 1, file) < 1)
                 {
                         return false;
                 }
@@ -673,7 +669,7 @@ private:
                 DEBUG_ASSERT_POINTER(line_buffer);
                 DEBUG_ASSERT(encoded_size > 0);
                 const int cr_size = 1;
-                if (fwrite(line_buffer, encoded_size, 1, file) < 1)
+                if (fwrite(line_buffer, static_cast<size_t>(encoded_size), 1, file) < 1)
                 {
                         return false;
                 }
@@ -687,7 +683,7 @@ private:
                 {
                         return false;
                 }
-                if (fwrite(tmp, tmp_size + cr_size, 1, file) < 1)
+                if (fwrite(tmp, static_cast<size_t>(tmp_size + cr_size), 1, file) < 1)
                 {
                         return false;
                 }
@@ -868,7 +864,7 @@ private:
                                                                 result = false;
                                                                 break;
                                                         }
-                                                        if (fwrite(buffer + okuri_nasi_index, line_size + cr_size, 1, file_special) < 1)
+                                                        if (fwrite(buffer + okuri_nasi_index, static_cast<size_t>(line_size + cr_size), 1, file_special) < 1)
                                                         {
                                                                 result = false;
                                                                 break;
@@ -925,7 +921,7 @@ private:
                 for (int i = 0; i != lines; ++i)
                 {
                         int line_size = SkkUtility::getLineSize(buffer, (sort_key + i)->index, filesize);
-                        if (fwrite(buffer + (sort_key + i)->index, line_size + cr_size, 1, file) < 1)
+                        if (fwrite(buffer + (sort_key + i)->index, static_cast<size_t>(line_size + cr_size), 1, file) < 1)
                         {
                                 result = false;
                                 break;
@@ -1159,7 +1155,7 @@ private:
                 if (aligned_block_dictionary)
                 {
                         int size = index - top_offset;
-                        if (fwrite(object.getBuffer() + top_offset, size, 1, aligned_block_dictionary) < 1)
+                        if (fwrite(object.getBuffer() + top_offset, static_cast<size_t>(size), 1, aligned_block_dictionary) < 1)
                         {
                                 object.setIndex(backup_index);
                                 return false;
@@ -1417,7 +1413,7 @@ private:
                 if (aligned_block_dictionary)
                 {
                         int size = index - top_offset;
-                        if (fwrite(object.getBuffer() + top_offset, size, 1, aligned_block_dictionary) < 1)
+                        if (fwrite(object.getBuffer() + top_offset, static_cast<size_t>(size), 1, aligned_block_dictionary) < 1)
                         {
                                 object.setIndex(backup_index);
 
@@ -1708,7 +1704,7 @@ public:
                                 }
                                 else
                                 {
-                                        if (fseek(file, -sizeof(Information), SEEK_END) == -1)
+                                        if (fseek(file, -static_cast<long>(sizeof(Information)), SEEK_END) == -1)
                                         {
                                                 type = JISYO_TYPE_UNKNOWN;
                                                 result = false;
@@ -1904,7 +1900,7 @@ public:
                         }
                         else
                         {
-                                if (fseek(file, -sizeof(Information), SEEK_END) == -1)
+                                if (fseek(file, -static_cast<long>(sizeof(Information)), SEEK_END) == -1)
                                 {
                                         result = false;
                                 }
@@ -1916,7 +1912,7 @@ public:
                                 }
                                 if (result)
                                 {
-                                        if (fseek(file, -sizeof(Information), SEEK_END) == -1)
+                                        if (fseek(file, -static_cast<long>(sizeof(Information)), SEEK_END) == -1)
                                         {
                                                 result = false;
                                         }
@@ -1937,7 +1933,7 @@ public:
                                                 int index_data_offset = static_cast<int>(ftell(file));
                                                 if (result)
                                                 {
-                                                        int size_of_block = block ? sizeof(Block) : sizeof(BlockShort);
+                                                        const size_t size_of_block = block ? sizeof(Block) : sizeof(BlockShort);
                                                         struct
                                                         {
                                                                 const void *p;
@@ -1945,12 +1941,18 @@ public:
                                                         }
                                                         table[] =
                                                         {
-                                                                { &index_data_header, sizeof(index_data_header), },
-                                                                { fixed_array, sizeof(FixedArray) * 256, },
-                                                                { block, sizeof(Block) * (normal_block_length + special_block_length), },
-                                                                { block_short, sizeof(BlockShort) * (normal_block_length + special_block_length), },
-                                                                { string, normal_string_size + special_string_size, },
-                                                                { 0, 0, },
+                                                                { &index_data_header,
+                                                                  sizeof(index_data_header), },
+                                                                { fixed_array,
+                                                                  sizeof(FixedArray) * 256, },
+                                                                { block,
+                                                                  sizeof(Block) * static_cast<size_t>(normal_block_length + special_block_length), },
+                                                                { block_short,
+                                                                  sizeof(BlockShort) * static_cast<size_t>(normal_block_length + special_block_length), },
+                                                                { string,
+                                                                  static_cast<size_t>(normal_string_size + special_string_size), },
+                                                                { 0,
+                                                                  0, },
                                                         };
 
                                                         for (int i = 0;; ++i)
@@ -1978,8 +1980,8 @@ public:
                                                         {
                                                                 int index_data_size = static_cast<int>(sizeof(index_data_header) +
                                                                                                        sizeof(FixedArray) * 256 +
-                                                                                                       size_of_block * (normal_block_length + special_block_length) +
-                                                                                                       normal_string_size + special_string_size);
+                                                                                                       static_cast<size_t>(size_of_block * static_cast<size_t>(normal_block_length + special_block_length)) +
+                                                                                                       static_cast<size_t>(normal_string_size + special_string_size));
                                                                 tmp_information.set(Information::ID_INDEX_DATA_SIZE,
                                                                                     index_data_size);
                                                                 tmp_information.set(Information::ID_INDEX_DATA_OFFSET,
@@ -2017,7 +2019,7 @@ public:
                         else
                         {
                                 result = true;
-                                if (fseek(file, -sizeof(Information), SEEK_END) == -1)
+                                if (fseek(file, -static_cast<long>(sizeof(Information)), SEEK_END) == -1)
                                 {
                                         result = false;
                                 }
@@ -2051,7 +2053,7 @@ public:
                         else
                         {
                                 result = true;
-                                if (fseek(file, -sizeof(Information), SEEK_END) == -1)
+                                if (fseek(file, -static_cast<long>(sizeof(Information)), SEEK_END) == -1)
                                 {
                                         result = false;
                                 }

@@ -13,7 +13,7 @@ export MAKEDEPEND	= $(PERL) -w $(PROJECT_ROOT)/tools/build/makedepend.$(ARCHITEC
 
 ifeq ($(ARCHITECTURE),BSD_CYGWIN_LINUX_GCC)
 SOURCE_PATH		= ./source
-PRECOMMAND		=
+PRE_COMMAND		=
 else				# ($(ARCHITECTURE),BSD_CYGWIN_LINUX_GCC)
 include UNKNOWN_ARCHITECTURE_or_Makefile.config_not_found__please_execute_configure__dummy_include_file
 endif				# ($(ARCHITECTURE),BSD_CYGWIN_LINUX_GCC)
@@ -89,8 +89,9 @@ package			:
 	$(RM) -f yaskkserv-$(PROJECT_VERSION)/.hg_archival.txt &&\
 	$(RM) -f yaskkserv-$(PROJECT_VERSION)/.hgignore &&\
 	$(RM) -rf yaskkserv-$(PROJECT_VERSION)/local &&\
-	tar cjf yaskkserv-$(PROJECT_VERSION).tar.bz2 yaskkserv-$(PROJECT_VERSION) &&\
-	sha1sum yaskkserv-$(PROJECT_VERSION).tar.bz2
+	tar czf yaskkserv-$(PROJECT_VERSION).tar.gz yaskkserv-$(PROJECT_VERSION) &&\
+	tar cJf yaskkserv-$(PROJECT_VERSION).tar.xz yaskkserv-$(PROJECT_VERSION) &&\
+	sha1sum yaskkserv-$(PROJECT_VERSION).tar.gz yaskkserv-$(PROJECT_VERSION).tar.xz
 
 setup			:
 	mkdir -p $(VAR_PATH)/skk/architecture/$(ARCHITECTURE_LOWER_CASE)
