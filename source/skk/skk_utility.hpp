@@ -91,6 +91,10 @@ inline int encodeHiragana(const char *source, char *destination, int size)
                 }
                 if (c == 0xa4)
                 {
+                        if (i + 1 >= size)
+                        {
+                                return 0;
+                        }
                         *(destination + result) = *(source + i + 1);
                         i += 2;
                         ++result;
