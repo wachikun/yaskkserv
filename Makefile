@@ -83,14 +83,13 @@ install_hairy		: install_common_
 package			:
 	$(MKDIR) -p var &&\
 	$(MKDIR) -p var/package &&\
-	$(RM) -rf var/package/yaskkserv-$(PROJECT_VERSION) &&\
-	hg archive var/package/yaskkserv-$(PROJECT_VERSION) &&\
+	$(RM) -rf var/package/yaskkserv-$(PROJECT_VERSION).tar.gz &&\
+	$(RM) -rf var/package/yaskkserv-$(PROJECT_VERSION).tar.xz &&\
+	git archive --prefix=yaskkserv-$(PROJECT_VERSION)/ HEAD -o var/package/yaskkserv-$(PROJECT_VERSION).tar &&\
+	# hg archive var/package/yaskkserv-$(PROJECT_VERSION) &&\
 	cd var/package &&\
-	$(RM) -f yaskkserv-$(PROJECT_VERSION)/.hg_archival.txt &&\
-	$(RM) -f yaskkserv-$(PROJECT_VERSION)/.hgignore &&\
-	$(RM) -rf yaskkserv-$(PROJECT_VERSION)/local &&\
-	tar czf yaskkserv-$(PROJECT_VERSION).tar.gz yaskkserv-$(PROJECT_VERSION) &&\
-	tar cJf yaskkserv-$(PROJECT_VERSION).tar.xz yaskkserv-$(PROJECT_VERSION) &&\
+	gzip -c -9 yaskkserv-$(PROJECT_VERSION).tar > yaskkserv-$(PROJECT_VERSION).tar.gz &&\
+	xz -9 yaskkserv-$(PROJECT_VERSION).tar &&\
 	sha1sum yaskkserv-$(PROJECT_VERSION).tar.gz yaskkserv-$(PROJECT_VERSION).tar.xz
 
 setup			:
