@@ -1972,7 +1972,9 @@ public:
                         int server_completion_midasi_string_size,
                         int server_completion_test,
                         int google_cache_entries,
+#ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
                         const char *google_cache_file,
+#endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
                         bool dictionary_check_update_flag,
                         bool no_daemonize_flag,
                         bool use_http_flag,
@@ -2139,9 +2141,11 @@ private:
         bool local_main_loop_4(int work_index, int recv_result);
 
         void print_syslog_cache_information();
+#if defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
         void save_cache_file(const char *filename);
         void load_cache_file_read_all(const char header[64], int fd, int file_size, int bitflags);
         void load_cache_file(const char *filename);
+#endif // defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
 
 private:
         LocalSkkDictionary *skk_dictionary_;
@@ -2935,6 +2939,7 @@ bool LocalSkkServer::local_main_loop_4(int work_index, int recv_result)
         return result;
 }
 
+#if defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
 void LocalSkkServer::print_syslog_cache_information()
 {
         int fast_entries;
@@ -3209,6 +3214,7 @@ void LocalSkkServer::load_cache_file(const char *filename)
         }
         close(fd);
 }
+#endif // defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
 
 // main_loop_recv() に失敗して error break すべきならば偽を返します。
 bool LocalSkkServer::local_main_loop_loop(fd_set &fd_set_read)
@@ -3287,11 +3293,13 @@ void LocalSkkServer::local_main_loop_sighup()
         SkkSimpleString string(buffer);
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
 
+#if defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
         if (google_cache_file_)
         {
                 syslog_.printf(1, SkkSyslog::LEVEL_INFO, "save cache file \"%s\"", google_cache_file_);
                 save_cache_file(google_cache_file_);
         }
+#endif // defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
 
         const char google_japanese_input[] = "cache status    google japanese Input : ";
         string.append(google_japanese_input, sizeof(google_japanese_input) - 1);
@@ -3364,11 +3372,13 @@ bool LocalSkkServer::local_main_loop()
         pthread_create(&pthread, 0, signal_thread, 0);
 #endif  // YASKKSERV_CONFIG_HAVE_PTHREAD
 
+#if defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
         if (google_cache_file_)
         {
                 syslog_.printf(1, SkkSyslog::LEVEL_INFO, "load cache file \"%s\"", google_cache_file_);
                 load_cache_file(google_cache_file_);
         }
+#endif // defined(YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT) && (defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL))
 
         bool result = true;
         for (;;)
@@ -3430,7 +3440,9 @@ int print_usage()
                            "      --server-completion-test=type\n"
                            "                           1:default  2:ignore slash  3:space  4:space and protocol 'c'\n"
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
                            "      --google-cache=N     use google cache(default 0(disable))\n"
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
                            "      --use-http           force use http(default https or http)\n"
                            "      --use-ipv6           use ipv6(default ipv4)\n"
                            "      --google-japanese-input=TYPE\n"
@@ -3469,8 +3481,10 @@ int print_usage()
                            "      --google-suggest\n"
                            "                           enable google suggest\n"
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_SUGGEST
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
                            "      --google-cache-file=filename\n"
                            "                           save/load cache filename\n"
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
                            "  -v, --version            print version\n");
         return EXIT_FAILURE;
@@ -3497,7 +3511,9 @@ enum
         OPTION_TABLE_SERVER_COMPLETION_MIDASI_STRING_SIZE,
         OPTION_TABLE_SERVER_COMPLETION_TEST,
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
         OPTION_TABLE_GOOGLE_CACHE,
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
         OPTION_TABLE_USE_HTTP,
         OPTION_TABLE_USE_IPV6,
         OPTION_TABLE_GOOGLE_JAPANESE_INPUT,
@@ -3505,7 +3521,9 @@ enum
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_SUGGEST
         OPTION_TABLE_GOOGLE_SUGGEST,
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_SUGGEST
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
         OPTION_TABLE_GOOGLE_CACHE_FILE,
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
         OPTION_TABLE_VERSION,
 
@@ -3555,10 +3573,12 @@ const SkkCommandLine::Option option_table[] =
                 SkkCommandLine::OPTION_ARGUMENT_INTEGER,
         },
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
         {
                 0, "google-cache",
                 SkkCommandLine::OPTION_ARGUMENT_INTEGER,
         },
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
         {
                 0, "use-http",
                 SkkCommandLine::OPTION_ARGUMENT_NONE,
@@ -3581,10 +3601,12 @@ const SkkCommandLine::Option option_table[] =
                 SkkCommandLine::OPTION_ARGUMENT_NONE,
         },
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_SUGGEST
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
         {
                 0, "google-cache-file",
                 SkkCommandLine::OPTION_ARGUMENT_STRING,
         },
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
         {
                 "v", "version",
@@ -3737,6 +3759,7 @@ bool local_main_core_command_line(SkkCommandLine &command_line, int &result, int
                         }
                 }
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
                 if (command_line.isOptionDefined(OPTION_TABLE_GOOGLE_CACHE))
                 {
                         option.google_cache = command_line.getOptionArgumentInteger(OPTION_TABLE_GOOGLE_CACHE);
@@ -3747,6 +3770,7 @@ bool local_main_core_command_line(SkkCommandLine &command_line, int &result, int
                                 return true;
                         }
                 }
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
 #ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_SUGGEST
                 if (command_line.isOptionDefined(OPTION_TABLE_GOOGLE_SUGGEST))
                 {
@@ -3815,10 +3839,12 @@ bool local_main_core_command_line(SkkCommandLine &command_line, int &result, int
                                 return true;
                         }
                 }
+#if defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
                 if (command_line.isOptionDefined(OPTION_TABLE_GOOGLE_CACHE_FILE))
                 {
                         option.google_cache_file = command_line.getOptionArgumentString(OPTION_TABLE_GOOGLE_CACHE_FILE);
                 }
+#endif // defined(YASKKSERV_CONFIG_HEADER_HAVE_GNUTLS_OPENSSL) || defined(YASKKSERV_CONFIG_HEADER_HAVE_OPENSSL)
 #endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
         }
         else
@@ -3995,7 +4021,9 @@ int local_main_core(int argc, char *argv[])
                                        option.server_completion_midasi_string_size,
                                        option.server_completion_test,
                                        option.google_cache,
+#ifdef YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
                                        option.google_cache_file,
+#endif  // YASKKSERV_CONFIG_ENABLE_GOOGLE_JAPANESE_INPUT
                                        option.check_update_flag,
                                        option.no_daemonize_flag,
                                        option.use_http_flag,
