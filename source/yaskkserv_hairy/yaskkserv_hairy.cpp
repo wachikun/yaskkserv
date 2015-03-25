@@ -1933,8 +1933,8 @@ public:
         {
         }
 
-        LocalSkkServer(int port = 1178, int log_level = 0) :
-                SkkServer("yaskkserv_" SERVER_IDENTIFIER, port, log_level),
+        LocalSkkServer(int port = 1178, int log_level = 0, const char *address = "0.0.0.0") :
+                SkkServer("yaskkserv_" SERVER_IDENTIFIER, port, log_level, address),
 
                 skk_dictionary_(0),
                 dictionary_filename_table_(0),
@@ -3426,6 +3426,7 @@ ERROR_BREAK:
 int print_usage()
 {
         SkkUtility::printf("Usage: yaskkserv [OPTION] dictionary [dictionary...]\n"
+                           "  -a, --address            listen address (default 0.0.0.0)\n"
                            "  -c, --check-update       check update dictionary (default disable)\n"
                            "  -d, --debug              enable debug mode (default disable)\n"
                            "  -h, --help               print this help and exit\n"
@@ -3500,6 +3501,7 @@ int print_version()
 
 enum
 {
+        OPTION_TABLE_ADDRESS,
         OPTION_TABLE_CHECK_UPDATE,
         OPTION_TABLE_DEBUG,
         OPTION_TABLE_HELP,
@@ -3532,6 +3534,10 @@ enum
 
 const SkkCommandLine::Option option_table[] =
 {
+        {
+                "a", "address",
+                SkkCommandLine::OPTION_ARGUMENT_STRING,
+        },
         {
                 "c", "check-update",
                 SkkCommandLine::OPTION_ARGUMENT_NONE,
@@ -3620,6 +3626,7 @@ const SkkCommandLine::Option option_table[] =
 
 struct Option
 {
+        const char *address;
         int log_level;
         int max_connection;
         int port;
@@ -3643,6 +3650,7 @@ struct Option
 }
 option =
 {
+        "0.0.0.0",
         1,
         8,
         1178,
@@ -3693,6 +3701,10 @@ bool local_main_core_command_line(SkkCommandLine &command_line, int &result, int
                 if (command_line.isOptionDefined(OPTION_TABLE_DEBUG))
                 {
                         option.debug_flag = true;
+                }
+                if (command_line.isOptionDefined(OPTION_TABLE_ADDRESS))
+                {
+                        option.address = command_line.getOptionArgumentString(OPTION_TABLE_ADDRESS);
                 }
                 if (command_line.isOptionDefined(OPTION_TABLE_LOG_LEVEL))
                 {
@@ -4010,7 +4022,7 @@ int local_main_core(int argc, char *argv[])
 
         if (result == EXIT_SUCCESS)
         {
-                LocalSkkServer *skk_server = new LocalSkkServer(option.port, option.log_level);
+                LocalSkkServer *skk_server = new LocalSkkServer(option.port, option.log_level, option.address);
                 const int listen_queue = 5;
                 skk_server->initialize(skk_dictionary,
                                        &argv[command_line.getArgumentArgvIndex()],

@@ -105,10 +105,11 @@ public:
                 syslog_.printf(1, SkkSyslog::LEVEL_INFO, "terminated");
         }
 
-        SkkServer(const char *identifier, int port, int log_level) :
+        SkkServer(const char *identifier, int port, int log_level, const char *address) :
                 syslog_(identifier, log_level),
                 work_(0),
                 port_(port),
+                address_(address),
                 max_connection_(0),
                 listen_queue_(0),
                 file_descriptor_(0)
@@ -185,7 +186,10 @@ protected:
                 struct sockaddr_in socket_connect;
                 SkkUtility::clearMemory(&socket_connect, sizeof(socket_connect));
                 socket_connect.sin_family = AF_INET;
-                socket_connect.sin_addr.s_addr = INADDR_ANY;
+                if (! inet_aton(address_, &socket_connect.sin_addr)) {
+                        SkkUtility::printf("invalid address\n");
+                        return false;
+                }
                 socket_connect.sin_port = htons(static_cast<uint16_t>(port_));
                 int retry = 3;
                 while (bind(file_descriptor_, reinterpret_cast<struct sockaddr *>(&socket_connect), sizeof(socket_connect)) == -1)
@@ -703,6 +707,7 @@ protected:
         SkkSyslog syslog_;
         Work *work_;
         int port_;
+        const char *address_;
         int max_connection_;
         int listen_queue_;
         int file_descriptor_;
