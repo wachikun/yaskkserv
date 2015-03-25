@@ -14,7 +14,7 @@ my %global_options = (
 		     );
 my %global;
 $global{'project_identifier'} = 'YASKKSERV';
-$global{'version'} = '0.6.3';
+$global{'version'} = '1.0.0';
 
 # CompilerIsSupport($compiler_version, 3, 2, 1);
 sub CompilerIsSupport ($$$$) {
