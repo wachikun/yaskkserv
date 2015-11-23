@@ -18,6 +18,10 @@
 #ifndef SKK_SERVER_H
 #define SKK_SERVER_H
 
+#ifdef YASKKSERV_CONFIG_HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 #include "skk_architecture.hpp"
 #include "skk_socket.hpp"
 #include "skk_utility.hpp"
@@ -171,6 +175,15 @@ protected:
 #endif  // SKK_MEMORY_DEBUG
                         *((work_ + i)->read_buffer + 0) = '\0';
                 }
+
+#ifdef YASKKSERV_CONFIG_HAVE_SYSTEMD
+                int number_of_fds = sd_listen_fds(1);
+                if (number_of_fds == 1) {
+                        file_descriptor_ = SD_LISTEN_FDS_START;
+                        syslog_.printf(1, SkkSyslog::LEVEL_INFO, "Use fd=%d from systemd socket activation", file_descriptor_);
+                        return true;
+                }
+#endif
 
                 file_descriptor_ = socket(AF_INET, SOCK_STREAM, 0);
                 if (file_descriptor_ == -1)

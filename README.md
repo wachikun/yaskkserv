@@ -105,6 +105,10 @@ $ make -f Makefile.noperl
   <dd>エラーメッセージ出力を有効にします。 (デフォルト)
   <dt>--disable-error-message
   <dd>エラーメッセージ出力を無効にします。ヘルプメッセージ等も表示されなくなるので注意が必要です。
+  <dt>--enable-systemd
+  <dd>systemd の socket activation を有効にします。 (デフォルト)
+  <dt>--disable-systemd
+  <dd>systemd の socket activation を無効にします。
   <dt>--precompile
   <dd>プリコンパイルヘッダを使用します。
   <dt>--prefix=PREFIX
@@ -188,3 +192,6 @@ $ yaskkserv --google-japanese-input=notfound-input-suggest --google-suggest LOCA
 ```
 
 --use-http オプションを付けることで https ではなく http でアクセスできます。
+
+## systemd の socket activation を利用する
+examples ディレクトリにある unit ファイルをインストールすることで、systemd の socket activation を利用して起動することができる。

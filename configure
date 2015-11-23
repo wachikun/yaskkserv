@@ -11,6 +11,7 @@ my %global_options = (
 		      'enable-https' => !0,
 		      'enable-gnutls' => !0,
 		      'enable-openssl' => !0,
+                      'enable-systemd' => !0,
 		     );
 my %global;
 $global{'project_identifier'} = 'YASKKSERV';
@@ -134,6 +135,8 @@ GetOptions('gplusplus=s' => \$global_options{'gplusplus'},
            'disable-gnutls' => \$global_options{'disable-gnutls'},
            'enable-openssl' => \$global_options{'enable-openssl'},
            'disable-openssl' => \$global_options{'disable-openssl'},
+           'enable-systemd' => \$global_options{'enable-systemd'},
+           'disable-systemd' => \$global_options{'disable-systemd'},
            'precompile' => \$global_options{'precompile'},
            'prefix=s' => \$global_options{'prefix'});
 
@@ -156,6 +159,8 @@ if (defined($global_options{'help'})) {
     print "    --disable-gnutls                disable GnuTLS\n";
     print "    --enable-openssl                enable OpenSSL [default]\n";
     print "    --disable-openssl               disable OpenSSL\n";
+    print "    --enable-systemd                enable systemd [default]\n";
+    print "    --disable-systemd               disable systemd\n";
     print "    --precompile                    use precompile (for G++ 4.0 or newer)\n";
     print "    --prefix=PREFIX                 install root directory [/usr/local]\n";
     die;
@@ -433,6 +438,19 @@ EOT
     } else {
 	$global_options{'enable-google-japanese-input'} = undef;
     }
+
+    if (defined($global_options{'enable-systemd'}) and !defined($global_options{'disable-systemd'})) {
+	my $includes = "#include <systemd/sd-daemon.h>\n";
+	my $body = "int fd = SD_LISTEN_FDS_START;\n" .
+		   "int ret = sd_listen_fds(1);\n";
+	if (CompilerCheck($includes, $body)) {
+	    $global{'data'} .= "CXXFLAGS_CONFIG				+= -D $global{'project_identifier'}_CONFIG_HAVE_SYSTEMD\n";
+	    $global{'HAVE_SYSTEMD'} = !0;
+	    print "SD_LISTEN_FDS_START and sd_listen_fds (found)\n";
+	} else {
+	    print STDERR "*** Warning : SD_LISTEN_FDS_START and sd_listen_fds are not found\n";
+	}
+    }
 }
 
 {
@@ -546,6 +564,13 @@ EOT
     if (defined($global{'HAVE_PTHREAD'})) {
 	if (LinkerCheckLibrary('-lpthread')) {
 	    $global{'LDFLAGS_LIBRARY_HAIRY'} .= ' -lpthread';
+	}
+    }
+    if (defined($global{'HAVE_SYSTEMD'})) {
+	if (LinkerCheckLibrary('-lsystemd')) {
+	    $global{'LDFLAGS_LIBRARY_SIMPLE'} .= ' -lsystemd';
+	    $global{'LDFLAGS_LIBRARY_NORMAL'} .= ' -lsystemd';
+	    $global{'LDFLAGS_LIBRARY_HAIRY'} .= ' -lsystemd';
 	}
     }
 

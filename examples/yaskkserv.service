@@ -1,0 +1,11 @@
+[Unit]
+Description=Yet Another SKK server
+After=yaskkserv.socket
+Requires=yaskkserv.socket
+
+[Service]
+User=nobody
+ExecStart=/usr/bin/yaskkserv_hairy --no-daemonize --google-japanese-input=notfound /usr/share/skk/SKK-JISYO.L.yaskkserv
+
+[Install]
+WantedBy=multi-user.target
