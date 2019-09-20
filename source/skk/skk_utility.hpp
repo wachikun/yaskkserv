@@ -1283,13 +1283,15 @@ private:
 // real	0m0.106s
 // offset_max=25
 // average=0.791383
-                int result = 0;
+                unsigned int unsigned_tmp = 0;
                 const int factor = 61;
                 for (int i = 0; i != size; ++i)
                 {
-                        result = result * factor + *reinterpret_cast<const unsigned char*>(key + i);
+                        unsigned_tmp = unsigned_tmp * factor + *reinterpret_cast<const unsigned char*>(key + i);
                 }
-                return result & 0x7fffffff;
+                const unsigned int unsigned_mask = 0x7fffffffU;
+                int result = static_cast<int>(unsigned_tmp & unsigned_mask);
+                return result;
         }
 
 private:
