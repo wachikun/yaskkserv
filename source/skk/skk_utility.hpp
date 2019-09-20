@@ -1290,8 +1290,7 @@ private:
                         unsigned_tmp = unsigned_tmp * factor + *reinterpret_cast<const unsigned char*>(key + i);
                 }
                 const unsigned int unsigned_mask = 0x7fffffffU;
-                int result = static_cast<int>(unsigned_tmp & unsigned_mask);
-                return result;
+                return static_cast<int>(unsigned_tmp & unsigned_mask);
         }
 
 private:
