@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe <wac@umiushi.org>
+  Copyright (C) 2005-2021 Tadashi Watanabe <twacc2020@gmail.com>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -114,7 +114,7 @@ int print_version()
 {
         SkkUtility::printf("yaskkserv_make_dictionary version " YASKKSERV_VERSION "\n");
         SkkUtility::printf("Copyright (C) 2005, 2006, 2007, 2008, 2011, 2012, 2013, 2014 Tadashi Watanabe\n");
-        SkkUtility::printf("http://umiushi.org/~wac/yaskkserv/\n");
+        SkkUtility::printf("https://github.com/wachikun/yaskkserv\n");
         return -1;
 }
 }
